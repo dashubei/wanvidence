@@ -13,6 +13,7 @@
  *     build.format が 'directory' なので、配信される実体は `/chapters/xx/` 側になる
  */
 import {
+  GOOGLE_SITE_VERIFICATION,
   SITE_NAME,
   SITE_DESCRIPTION,
   SITE_LOCALE,
@@ -106,6 +107,10 @@ const jsonLd = serializeJsonLd(
 <meta name="description" content={metaDescription} />
 <link rel="canonical" href={canonical} />
 <meta name="robots" content={robots} />
+
+{GOOGLE_SITE_VERIFICATION && (
+  <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION} />
+)}
 
 <meta property="og:type" content={kind === 'chapter' ? 'article' : 'website'} />
 <meta property="og:title" content={fullTitle} />

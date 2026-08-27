@@ -48,9 +48,19 @@ const siteName = SITE_NAME;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
 
-    <!-- 明示しておくと、ブラウザが /favicon.ico を暗黙に取りに行かなくなる。
-         base 付きで配信するとオリジン直下には何も無いので、404 をコンソールに出さないため。 -->
-    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <!-- アイコン。3本とも必要で、それぞれ拾うブラウザが違う。
+         ・favicon.ico … SVG のファビコンに対応しないブラウザ（Safari）が使う。16/32/48 を内包
+         ・favicon.svg … Chrome / Firefox / Edge が使う。中で明暗を切り替える。
+                         sizes="any" を付けるのは、これがあると Chrome が .ico より
+                         こちらを優先するため（付けないと 32x32 の .ico に負ける）
+         ・apple-touch-icon.png … iOS のホーム画面。SVG は使われず、透過は黒で塗られるので
+                         180x180 の不透過 PNG を別に置いている
+         href を明示しておくと、ブラウザがオリジン直下の /favicon.ico を暗黙に取りに行かなくなる。
+         base 付きで配信するとオリジン直下には何も無いので、404 をコンソールに出さないため。
+         3本とも withBase() を通すこと（/wanvidence 配下で配信されるため）。 -->
+    <link rel="icon" href={withBase('/favicon.ico')} sizes="16x16 32x32 48x48" />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" sizes="any" />
+    <link rel="apple-touch-icon" href={withBase('/apple-touch-icon.png')} sizes="180x180" />
 
     <!-- title / description / canonical / robots / OG / JSON-LD はすべてここから出る -->
     <Seo

@@ -1,10 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Wanvidence">
   <title>Wanvidence</title>
   <!--
-    ヘッダーのブランドアイコン（Lucide の paw-print）と同じ形を、16px で潰れないように
-    線ではなく塗りで作り直したもの。色は global.css の --c-accent / --c-text-invert を
-    sRGB に変換した実値（SVG では CSS 変数が使えない）。
-    トークンを変えたときは、このファイルの2色も合わせて変える。
+    タブに出る肉球。ヘッダーのブランドアイコン（Lucide の paw-print）と同じ「肉球」の意味を、
+    16px で読める形に描き直したもの。線ではなく塗りなのは、1px の線が 16px では消えるため。
+
+    形の制約（16px でも指4本と掌が分かれて見えること）:
+      ・隣り合う指の間隔を 2.2 以上とる（32 単位系。16px では 1.1px になる）
+      ・掌と指の間も 2 以上あける
+      ・左右を厳密な鏡像にする。ellipse は cx=16±d、掌のパスは 16±d の絶対座標で書く
+    ラスタライズして連結成分を数えると、16/24/32/48/180px すべてで 5個（指4＋掌1）に分かれる。
+
+    色は global.css のトークン c-accent（背景）と c-text-invert（前景）を
+    sRGB に変換した実値。SVG では CSS 変数が使えないので直接書いている。
+    トークンを変えたときは、この2色と favicon.ico / apple-touch-icon.png を作り直す。
+
+    注意: XML のコメントには連続ハイフンを書けない。トークン名の頭の連続ハイフンを
+    そのまま書くと SVG 全体が構文エラーになり、アイコンが一切表示されなくなる。
   -->
   <style>
     .bg { fill: #006490; }
@@ -12,15 +23,15 @@
     /* 暗いタブバーでは沈むので、明暗を入れ替える */
     @media (prefers-color-scheme: dark) {
       .bg { fill: #65bde8; }
-      .fg { fill: #0d2430; }
+      .fg { fill: #140f0b; }
     }
   </style>
   <rect class="bg" width="32" height="32" rx="7" />
   <g class="fg">
-    <ellipse cx="8.1" cy="14.2" rx="3.15" ry="4.0" transform="rotate(-24 8.1 14.2)" />
-    <ellipse cx="13.3" cy="9.5" rx="3.0" ry="4.1" transform="rotate(-8 13.3 9.5)" />
-    <ellipse cx="18.7" cy="9.5" rx="3.0" ry="4.1" transform="rotate(8 18.7 9.5)" />
-    <ellipse cx="23.9" cy="14.2" rx="3.15" ry="4.0" transform="rotate(24 23.9 14.2)" />
-    <path d="M16 15.4c3.9 0 7.1 2.9 7.1 6.2 0 2.6-2.1 4.4-5.0 4.4-1.0 0-1.6-.3-2.1-.3s-1.1.3-2.1.3c-2.9 0-5.0-1.8-5.0-4.4 0-3.3 3.2-6.2 7.1-6.2Z" />
+    <ellipse cx="6.1"  cy="13.6" rx="2.65" ry="3.45" transform="rotate(-30 6.1 13.6)" />
+    <ellipse cx="12.3" cy="9.3"  rx="2.7"  ry="3.5"  transform="rotate(-7 12.3 9.3)" />
+    <ellipse cx="19.7" cy="9.3"  rx="2.7"  ry="3.5"  transform="rotate(7 19.7 9.3)" />
+    <ellipse cx="25.9" cy="13.6" rx="2.65" ry="3.45" transform="rotate(30 25.9 13.6)" />
+    <path d="M16 16C19.63 16 22.6 18.7 22.6 21.77 22.6 24.18 20.65 25.86 17.95 25.86 17.02 25.86 16.47 25.58 16 25.58 15.53 25.58 14.98 25.86 14.05 25.86 11.35 25.86 9.4 24.18 9.4 21.77 9.4 18.7 12.37 16 16 16Z" />
   </g>
 </svg>

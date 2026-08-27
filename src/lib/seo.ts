@@ -89,6 +89,18 @@ export const SITE_LOCALE = 'ja_JP';
 export const FALLBACK_ORIGIN = 'http://localhost:4321';
 
 /**
+ * Google Search Console の所有権確認トークン（HTML タグ方式）。
+ *
+ * 全ページに出している。Google が見るのはプロパティのルート（トップページ）だけだが、
+ * 1ページだけに置くと、そのページの構造を変えたときに黙って確認が外れる。
+ * 圧縮後の増分は無視できる大きさなので、堅牢さを取っている。
+ *
+ * 空文字にすると出力されない。確認が済んだあとも消さないこと
+ * （消すと Search Console の所有権が失効する）。
+ */
+export const GOOGLE_SITE_VERIFICATION = 'TXR5b58kBJ8bCaa2cT0MQHHlWFwkBeA_j0Cvq4iKjhI';
+
+/**
  * OG 画像のパス（サイト内の絶対パス。base は自動で付く）。
  *
  * 現在 public/ に画像が1枚もないため undefined。

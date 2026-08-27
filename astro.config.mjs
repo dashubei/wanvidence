@@ -22,7 +22,20 @@ export default defineConfig({
   site,
   base,
   trailingSlash: 'ignore',
-  build: { format: 'directory' },
+  build: {
+    format: 'directory',
+    // CSS を HTML に埋め込む。外部ファイルにすると、それがレンダリングブロックになる。
+    //
+    // 実測（Lighthouse・モバイル・4倍 CPU・brotli 配信、各3回）:
+    //   外部 CSS   Perf 98/98/97   FCP 平均 1,979ms   render-blocking 監査 0.5（失点）
+    //   インライン Perf 99/98/99   FCP 平均 1,706ms   render-blocking 監査 1.0（合格）
+    //
+    // 代償は、ページ間で CSS がキャッシュされなくなること。
+    // brotli 後で トップ +4.0KB / 章 +6.4KB を毎ページ余分に運ぶ。
+    // 検索から1ページだけ深く読む人（リファレンスなのでこちらが多い）には
+    // 273ms の得。章から章へ読み進む人には損。前者を取った。
+    inlineStylesheets: 'always',
+  },
   integrations: [mdx(), pagefind()],
   vite: { plugins: [tailwindcss()] },
   markdown: {
