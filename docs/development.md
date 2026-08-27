@@ -117,6 +117,36 @@ frontmatter のスキーマは `src/content.config.ts` にあります。
   GitHub Pages のプロジェクトサイトは `/<repo>/` の下に出るので、
   `href="/legend"` のような絶対パスは全部リンク切れになります
 
+## 依存で触ってはいけないもの
+
+`package.json` の次の2つは、**キャレット（`^`）を付けずに完全固定しています。**
+「揃っていないから直そう」と思ったら、先にここを読んでください。
+
+### `@astrojs/markdown-remark` は `7.2.4` に完全固定する
+
+astro 7.2.7 は、このパッケージを**完全一致の optional peerDependency** として
+宣言しています。キャレットではありません。
+
+```json
+"peerDependencies": { "@astrojs/markdown-remark": "7.2.4" }
+```
+
+したがって `^7.2.4` にすると、7.2.5 が出た時点で astro の peer 要求に違反し、
+**astro が使う版と `astro.config.mjs` が import する版が食い違います。**
+`markdown.processor` に渡す `unified()` は astro 本体と同じ版から来る必要があります。
+
+astro を上げるときは、上げた版の `peerDependencies` を読んで、この行を
+その版に合わせてください。ズレていれば `pnpm install` が peer 警告で教えてくれます。
+
+そもそも直接依存に入れているのは、pnpm の厳密リンクでは推移的依存を
+`import` できないためです（`unist-util-visit` も同じ理由で直接依存にしています）。
+
+### `unist-util-visit` は `5.1.0` に固定する
+
+`src/lib/rehype-chapter-links.mjs` が import しています。
+npm のフラットな `node_modules` では、Astro の依存として入っていたものが
+偶然解決できていました。pnpm に移行したときにビルドが落ちて判明したものです。
+
 ## 検査コマンド
 
 リンターとフォーマッターは oxc（oxlint / oxfmt）。
