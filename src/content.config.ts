@@ -1,4 +1,7 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+// z は 'astro:content' からも取れるが、そちらは非推奨（Astro 8 で削除される）。
+// 置き換え先は 'astro/zod'。astro 本体のサブパスなので依存は増えない。
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 /**
