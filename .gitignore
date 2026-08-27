@@ -42,3 +42,14 @@ desktop.ini
 
 # npm pack の出力
 *.tgz
+
+# Lighthouse を WSL で回すと、Windows 側の TMP をそのままディレクトリ名にして
+# ここに Chromium の一時プロファイルを作る（1回あたり約3MB）。
+# `C:\Users\...` という名前のディレクトリが実際にできる。
+C:\\*
+
+# Lighthouse のレポート出力（測定はリポジトリの外に出すのが本筋だが、
+# うっかりここに出したものをコミットしないため）
+*.report.json
+*.report.html
+lighthouse.*
