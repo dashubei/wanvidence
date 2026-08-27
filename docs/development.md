@@ -216,6 +216,19 @@ const base = process.env.BASE || '/';
 
 初回だけ、リポジトリの Settings → Pages で Source を GitHub Actions にします。
 
+### 既知の制約: robots.txt と llms.txt がクローラに読まれない
+
+プロジェクトサイトで配信しているので、生成した `robots.txt` は
+`/wanvidence/robots.txt` に出ます。**robots.txt はオリジン直下のものだけが
+読まれる仕様（RFC 9309）なので、クローラはこれを読みません。**
+
+クロール自体は止まりません（robots.txt が無いオリジンは全許可と解釈される）。
+失われるのは `Sitemap:` 行による自動発見と、AI クローラ向けの使い分けです。
+
+**コードの問題ではなく配信先の形の問題です。** 原因と回避方法（貼るだけの
+robots.txt を含む）は [`docs/decisions/13-origin-root-limitation.md`](decisions/13-origin-root-limitation.md)
+にあります。robots.txt が効いていないと気づいたとき、まずそこを読んでください。
+
 ## 貢献について
 
 この本は、これから初めて犬を飼う一人の読者に向けて書きました。

@@ -103,11 +103,20 @@ export const GOOGLE_SITE_VERIFICATION = 'TXR5b58kBJ8bCaa2cT0MQHHlWFwkBeA_j0Cvq4i
 /**
  * OG 画像のパス（サイト内の絶対パス。base は自動で付く）。
  *
- * 現在 public/ に画像が1枚もないため undefined。
- * 1200x630 の PNG を `public/og.png` として置いたら `'/og.png'` にする。
- * それだけで og:image と Twitter Card の形式（summary → summary_large_image）が切り替わる。
+ * `public/og.png` を指している。これが undefined でない限り、Seo.astro は
+ * og:image 一式を出し、Twitter Card を summary_large_image にする。
+ *
+ * 画像の中身: --c-accent の地に --c-text-invert で「Wanvidence」と
+ * SITE_TAGLINE の2行、favicon.svg と同じ肉球。フォントは global.css の
+ * --font-sans と同じ指定で組んである。
+ * 差し替えるときの条件は3つだけ:
+ *   ・1200x630 で、下の OG_IMAGE_SIZE と一致させる（数値だけ直すと嘘になる）
+ *   ・不透過（透過 PNG は SNS 側で黒や白に塗り潰される）
+ *   ・約500px 幅に縮小しても読めること（Twitter / Slack はその程度で表示する）
+ * 章ごとに別画像は作っていない。ビルド時に29枚を生成するには依存の追加が必要で、
+ * 得られるものが「章名が入る」だけのため。全ページがこの1枚を共有する。
  */
-export const DEFAULT_OG_IMAGE: string | undefined = undefined;
+export const DEFAULT_OG_IMAGE: string | undefined = '/og.png';
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /**
