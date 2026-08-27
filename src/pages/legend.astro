@@ -1,0 +1,210 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EvidenceBadge from '../components/EvidenceBadge.astro';
+import Callout from '../components/Callout.astro';
+import Deep from '../components/Deep.astro';
+import KeyPoints from '../components/KeyPoints.astro';
+import Experience from '../components/Experience.astro';
+import Disputed from '../components/Disputed.astro';
+import TodayAction from '../components/TodayAction.astro';
+import Term from '../components/Term.astro';
+---
+
+<BaseLayout
+  title="この本の読み方"
+  description="根拠の強さを示す5段階のバッジ、結論・本文・研究の中身という3層構造、体験談と科学的根拠を分けている理由、論争があるものの扱い方を説明しています。最初に読むと、以降の29章をどう読めばよいかが決まります。"
+>
+  <main id="main" class="wrap">
+    <div class="prose">
+      <h1>この本の読み方</h1>
+
+      <p>
+        この本は<strong>3つの層</strong>でできています。急いでいるときは第1層だけ読んでください。
+        それだけで行動できるように書いてあります。
+      </p>
+
+      <h2 id="three-layers">3つの層</h2>
+
+      <KeyPoints
+        title="第1層：結論"
+        items={[
+          '各節の冒頭にあるこの箱が第1層です。<strong>ここだけ読んで行動できる</strong>粒度で書かれています。',
+          '第2層は本文。専門用語をできるだけ避けて書いてあります。',
+          '第3層は折りたたみの中。研究の中身・数値・その研究の限界が入っています。',
+        ]}
+      />
+
+      <p>第2層はこの文章のような本文です。専門用語には<Term desc="留守番中に、飼い主がいないこと自体が引き金となってパニック状態になること。単なる寂しさとは区別される">分離不安</Term>のように点線が引かれていて、押すと意味が出ます。</p>
+
+      <Deep title="第3層はこの折りたたみです">
+        <p>
+          ここには、その主張がどの研究から来ているのか、対象は何頭だったのか、
+          どこまでが確認されていてどこからが推測なのか、という詳細が入ります。
+          初めて読むときは飛ばして構いません。
+        </p>
+        <p>
+          ただし、獣医師やトレーナーと話すとき、あるいは他の情報源と食い違ったときには、
+          ここを開くと判断の材料になります。
+        </p>
+      </Deep>
+
+      <h2 id="evidence">根拠の強さを示すバッジ</h2>
+
+      <p>
+        この本のほとんどの主張には、その根拠がどれくらい強いかを示すバッジが付いています。
+        <strong>同じ「犬の飼い方」の情報でも、根拠の強さは天と地ほど違います。</strong>
+        バッジは色だけでなく、アイコンと日本語のラベルでも区別できるようにしてあります。
+      </p>
+
+      <div class="legend">
+        <div class="legend__row">
+          <EvidenceBadge level="strong" />
+          <p>系統的レビュー・メタ分析・ランダム化比較試験・大規模なコホート研究に基づく。<strong>複数の独立した研究が同じ方向を示している</strong>状態です。</p>
+        </div>
+        <div class="legend__row">
+          <EvidenceBadge level="moderate" />
+          <p>単一の観察研究や中規模の調査に基づく。方向性は示されているが、まだ確定とは言えない状態です。</p>
+        </div>
+        <div class="legend__row">
+          <EvidenceBadge level="weak" />
+          <p>専門家の意見、小規模な研究、症例報告、あるいは「仕組みから考えるとこうなるはず」という推論。<strong>覆る可能性が十分にあります。</strong></p>
+        </div>
+        <div class="legend__row">
+          <EvidenceBadge level="experience" />
+          <p>飼い主やトレーナーの記録。<strong>科学的根拠ではありません。</strong>「実際にこう語られている」という事実の記録として読んでください。</p>
+        </div>
+        <div class="legend__row">
+          <EvidenceBadge level="disputed" />
+          <p>研究の結果が割れている、または日本と海外で指針が異なる。<strong>誰かが「これが正解」と断言していたら、その人は論争の存在を知らないだけかもしれません。</strong></p>
+        </div>
+      </div>
+
+      <h2 id="weak-chapters">バッジが「弱い根拠」ばかりの章について</h2>
+
+      <p>
+        章によっては、<strong>ほとんどのバッジが「弱い根拠」になっています。</strong>
+        これは手抜きではありません。<strong>その領域の研究が実際に薄い</strong>ということです。
+      </p>
+
+      <p>
+        たとえばトイレトレーニングとクレートの慣らし方——犬を迎えた人が最初に、必ず、
+        毎日直面する作業——には、<strong>査読を経た研究がほとんど存在しません。</strong>
+        「排泄を我慢できる時間は月齢＋1時間」「運動は1ヶ月齢あたり5分まで」といった
+        よく知られた目安も、出所をたどると研究ではなく、飼育現場の経験則に行き着きます。
+      </p>
+
+      <Callout type="note" title="それでも手順は書きます">
+        <p>
+          あなたは今夜、犬をクレートに入れなければなりません。
+          「根拠がないので書けません」では、何の役にも立ちません。
+        </p>
+        <p>
+          そこでこの本は、<strong>根拠が弱いことを明示したうえで、実務を書きます。</strong>
+          さらに「なぜ根拠がないのに、その方法が使われ続けているのか」も書きます。
+          背景が分かれば、絶対の法則ではないが的外れでもない目安として扱えます。
+        </p>
+      </Callout>
+
+      <p>
+        <strong>この本の価値は、強い根拠を並べることではなく、強さの違いを見せることにあります。</strong>
+        大規模な研究に支えられた記述と、誰かの経験則が、同じ顔をして並んでいる——
+        それが、犬の飼い方の情報でいちばん困ることでした。
+      </p>
+
+      <h2 id="separation">体験談と科学的根拠を混ぜない</h2>
+
+      <p>
+        犬の飼育情報でいちばん危ないのは、<strong>個人の体験が「科学的な事実」として流通すること</strong>です。
+        この本では、体験談は必ず紫の枠に入れて、本文から視覚的に切り離してあります。
+      </p>
+
+      <Experience source="この本の書き方の例">
+        <p>
+          「うちの子はこの方法で3日で直りました」——こういう記述は、この枠の中にだけ置かれます。
+          1頭で効いた方法が他の犬に効くとは限らないからです。
+        </p>
+      </Experience>
+
+      <Experience common source="複数の記録に共通していた場合">
+        <p>
+          枠が実線になっているものは、<strong>多くの飼い主が同じことを言っている</strong>という記録です。
+          単独の逸話より重みがありますが、それでも科学的根拠とは別物として扱ってください。
+        </p>
+      </Experience>
+
+      <h2 id="disputed-topics">論争があるものは、論争があると書く</h2>
+
+      <p>
+        犬の飼育には、専門家の間でも結論が出ていない論点がいくつもあります。
+        さらに厄介なことに、<strong>日本で当たり前とされているやり方が、国際的な学会の推奨と食い違っている領域があります。</strong>
+        そういう項目は、両方を並べて示します。
+      </p>
+
+      <Disputed
+        topic="この形式の見本"
+        japan="日本の動物病院で一般的に行われている内容が、こちら側に入ります。"
+        intl="国際的な獣医学会のガイドラインが推奨している内容が、こちら側に入ります。"
+        verdict="どちらが正しいかを断定できない場合は、断定しません。判断に必要な材料だけを示します。"
+        ask="「この判断の根拠になっているガイドラインはどれですか」——このように、獣医師に聞くときの具体的な言い方を添えます。"
+      />
+
+      <h2 id="action">読んで終わりにしないための仕掛け</h2>
+
+      <p>
+        リスクの情報だけを大量に浴びると、人はかえって行動しなくなります。
+        <strong>「自分にもできそうだ」という感覚とセットでなければ、行動は変わりません。</strong>
+        そのため、この本ではリスクを書いたら必ずその隣に対処法を置き、各章に今日中に終わる作業をひとつ置いています。
+      </p>
+
+      <TodayAction time="3分">
+        <p>この「読み方」のページをブックマークしておく。バッジの意味が分からなくなったら、ここに戻ってこられます。</p>
+      </TodayAction>
+
+      <Callout type="note" title="チェックリストの記録について">
+        <p>
+          本文中のチェックリストは、チェックした状態がこのブラウザに保存されます。
+          外部には一切送信されず、別の端末とも同期しません。
+          ブラウザのデータを消すと、チェックも消えます。
+        </p>
+      </Callout>
+
+      <h2 id="limits">この本の限界</h2>
+
+      <Callout type="warn" title="必ず読んでください">
+        <p>
+          この本は<strong>獣医師・行動診療の専門家・自治体の窓口と話すための材料</strong>であって、
+          その判断を置き換えるものではありません。
+        </p>
+        <p>
+          特に医療と法律の記述は、時間とともに古くなります。法令は改正され、ガイドラインは更新されます。
+          実際に行動する前に、必ず一次情報（法令の条文、学会の公式文書、自治体の公式サイト）で確認してください。
+        </p>
+      </Callout>
+    </div>
+  </main>
+
+  <style>
+    .wrap {
+      max-inline-size: 60rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+    .legend {
+      margin-block: 1.5rem;
+      border: 1px solid var(--c-border);
+      border-radius: 0.6rem;
+      overflow: clip;
+    }
+    .legend__row {
+      display: grid;
+      gap: 0.5rem 1rem;
+      padding: 0.9rem 1rem;
+      background: var(--c-surface);
+    }
+    .legend__row + .legend__row { border-block-start: 1px solid var(--c-border); }
+    .legend__row > :global(p) { margin: 0; font-size: 0.9375rem; }
+    @media (min-width: 40rem) {
+      .legend__row { grid-template-columns: 8.5rem 1fr; align-items: start; }
+    }
+  </style>
+</BaseLayout>

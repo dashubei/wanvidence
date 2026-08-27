@@ -1,0 +1,73 @@
+---
+/**
+ * 汎用の注意喚起ブロック。
+ *
+ * 編集ルール:
+ *   type="danger" / "warn" を単独で置かないこと。
+ *   リスクを書いたら、その直後に必ず対処法を書く。
+ *   （リスク情報だけを提示すると人は防衛的に回避し、行動が変わらないため）
+ */
+import Info from '@lucide/astro/icons/info';
+import TriangleAlert from '@lucide/astro/icons/triangle-alert';
+import OctagonAlert from '@lucide/astro/icons/octagon-alert';
+import Lightbulb from '@lucide/astro/icons/lightbulb';
+import CircleCheck from '@lucide/astro/icons/circle-check';
+
+interface Props {
+  type?: 'note' | 'warn' | 'danger' | 'tip' | 'ok';
+  title?: string;
+}
+
+const { type = 'note', title } = Astro.props;
+
+const MAP = {
+  note:   { Icon: Info,          fallback: '補足' },
+  warn:   { Icon: TriangleAlert, fallback: '注意' },
+  danger: { Icon: OctagonAlert,  fallback: '危険 — すぐに動く必要があること' },
+  tip:    { Icon: Lightbulb,     fallback: 'コツ' },
+  ok:     { Icon: CircleCheck,   fallback: 'これで大丈夫' },
+} as const;
+
+const { Icon, fallback } = MAP[type];
+const heading = title ?? fallback;
+---
+
+<aside class:list={['callout', `callout--${type}`]}>
+  <p class="callout__head">
+    <Icon size={17} stroke-width={2.2} aria-hidden="true" class="callout__icon" />
+    <span>{heading}</span>
+  </p>
+  <div class="callout__body"><slot /></div>
+</aside>
+
+<style>
+  .callout {
+    margin-block: 1.6rem;
+    padding: 0.9rem 1.1rem 1rem;
+    border: 1px solid var(--tint-border);
+    border-inline-start: 3px solid var(--tint);
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--tint-soft);
+  }
+  .callout__head {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0 0 0.4rem;
+    color: var(--tint);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .callout__icon { flex: none; }
+  .callout__body { font-size: 0.9375rem; }
+  .callout__body :global(> *:first-child) { margin-block-start: 0; }
+  .callout__body :global(> *:last-child) { margin-block-end: 0; }
+  .callout__body :global(> * + *) { margin-block-start: 0.7em; }
+
+  .callout--note   { --tint: var(--c-accent);  --tint-soft: var(--c-accent-soft);  --tint-border: var(--c-accent-line); }
+  .callout--warn   { --tint: var(--c-ev-disputed); --tint-soft: var(--c-ev-disputed-soft); --tint-border: var(--c-ev-disputed-border); }
+  .callout--danger { --tint: var(--c-danger);  --tint-soft: var(--c-danger-soft);  --tint-border: var(--c-danger-border); }
+  .callout--tip    { --tint: var(--c-action);  --tint-soft: var(--c-action-soft);  --tint-border: var(--c-action-border); }
+  .callout--ok     { --tint: var(--c-success); --tint-soft: var(--c-success-soft); --tint-border: var(--c-success-border); }
+</style>

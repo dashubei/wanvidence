@@ -1,0 +1,277 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import * as icons from '@lucide/astro';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import BookOpenCheck from '@lucide/astro/icons/book-open-check';
+import FlaskConical from '@lucide/astro/icons/flask-conical';
+import Scale from '@lucide/astro/icons/scale';
+import BookA from '@lucide/astro/icons/book-a';
+import Library from '@lucide/astro/icons/library';
+import MessageSquareQuote from '@lucide/astro/icons/message-square-quote';
+import { withBase } from '../lib/url';
+import { SITE_NAME, SITE_TAGLINE } from '../lib/seo';
+
+const iconMap = icons as unknown as Record<string, any>;
+
+const all = (await getCollection('chapters'))
+  .filter((c) => !c.data.draft)
+  .sort((a, b) => a.data.partOrder - b.data.partOrder || a.data.order - b.data.order);
+
+const parts: { name: string; order: number; items: typeof all }[] = [];
+for (const ch of all) {
+  let p = parts.find((x) => x.name === ch.data.part);
+  if (!p) {
+    p = { name: ch.data.part, order: ch.data.partOrder, items: [] };
+    parts.push(p);
+  }
+  p.items.push(ch);
+}
+parts.sort((a, b) => a.order - b.order);
+
+// JSON-LD の Book.hasPart になる。本文は渡さない（トップに全章の出典は要らない）
+const seoChapters = all.map((c) => ({
+  id: c.id,
+  title: c.data.title,
+  summary: c.data.summary,
+  order: c.data.order,
+  part: c.data.part,
+}));
+---
+
+<BaseLayout kind="home" pageType="CollectionPage" chapters={seoChapters}>
+  <main id="main">
+    <section class="hero">
+      <div class="hero__inner">
+        <p class="hero__eyebrow">{SITE_TAGLINE}</p>
+        {/* lang="en" を付ける理由: Wan + evidence の造語で、英語音（ワンビデンス）で
+            読ませたい。ja のままだと日本語 TTS がラテン文字を1字ずつ読むことがある。 */}
+        <h1 class="hero__title" lang="en">{SITE_NAME}</h1>
+        <p class="hero__lead">
+          研究で確かめられていることと、実際に飼っている人が言っていることを、
+          <strong>混ぜずに並べた</strong>本です。
+          どの主張がどれくらい確かなのかが、一目で分かるようにしてあります。
+        </p>
+
+        <div class="hero__actions">
+          <a href={withBase("/legend")} class="btn btn--primary">
+            <BookOpenCheck size={17} stroke-width={2.2} aria-hidden="true" />
+            <span>まず、この本の読み方</span>
+            <ArrowRight size={16} stroke-width={2.2} aria-hidden="true" />
+          </a>
+          {all[0] && (
+            <a href={withBase(`/chapters/${all[0].id}`)} class="btn">
+              <span>最初の章から読む</span>
+              <ArrowRight size={16} stroke-width={2.2} aria-hidden="true" />
+            </a>
+          )}
+        </div>
+      </div>
+    </section>
+
+    <section class="principles">
+      <div class="principles__inner">
+        <article class="pr">
+          <FlaskConical size={20} stroke-width={2} aria-hidden="true" class="pr__icon" />
+          <h2 class="pr__title">根拠の強さを表示する</h2>
+          <p class="pr__text">
+            大規模な研究で確かめられたことと、専門家が経験からそう考えているだけのことは、
+            確からしさがまったく違います。各主張に強さのバッジを付けています。
+          </p>
+        </article>
+        <article class="pr">
+          <MessageSquareQuote size={20} stroke-width={2} aria-hidden="true" class="pr__icon" />
+          <h2 class="pr__title">体験談を科学と混ぜない</h2>
+          <p class="pr__text">
+            実際に飼っている人の記録は、論文には出てこない解像度を持っています。
+            ただし別物なので、枠を分けて置いています。
+          </p>
+        </article>
+        <article class="pr">
+          <Scale size={20} stroke-width={2} aria-hidden="true" class="pr__icon" />
+          <h2 class="pr__title">割れているものは割れていると書く</h2>
+          <p class="pr__text">
+            日本で当たり前とされているやり方が、国際的な学会の推奨と違うことがあります。
+            断定できないものは、断定せずに両方を並べます。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="toc">
+      <div class="toc__inner">
+        <h2 class="toc__heading">目次</h2>
+        {parts.length === 0 && (
+          <p class="toc__empty">章はまだありません。調査結果の統合が終わり次第、ここに並びます。</p>
+        )}
+        {parts.map((part) => (
+          <section class="pt">
+            <h3 class="pt__title">{part.name}</h3>
+            <div class="pt__grid">
+              {part.items.map((ch) => {
+                const Icon = iconMap[ch.data.icon] ?? iconMap.BookOpen;
+                return (
+                  <a href={withBase(`/chapters/${ch.id}`)} class="cd">
+                    <span class="cd__head">
+                      <Icon size={17} stroke-width={2.1} aria-hidden="true" class="cd__icon" />
+                      <span class="cd__title">{ch.data.title}</span>
+                    </span>
+                    <span class="cd__summary">{ch.data.summary}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+
+        <section class="pt">
+          <h3 class="pt__title">付録</h3>
+          <div class="pt__grid">
+            <a href={withBase("/appendix/disputed")} class="cd">
+              <span class="cd__head">
+                <Scale size={17} stroke-width={2.1} aria-hidden="true" class="cd__icon" />
+                <span class="cd__title">論争のあるトピック</span>
+              </span>
+              <span class="cd__summary">研究が割れている、または日本と海外で指針が異なる論点を一箇所に集めたもの。判断を迫られたときに、何を根拠に迷えばよいかが分かります。</span>
+            </a>
+            <a href={withBase("/appendix/glossary")} class="cd">
+              <span class="cd__head">
+                <BookA size={17} stroke-width={2.1} aria-hidden="true" class="cd__icon" />
+                <span class="cd__title">用語集</span>
+              </span>
+              <span class="cd__summary">本文で解説した専門用語の一覧。この本は用語を消さずに残しています。相談するとき、正しい語を知っていること自体が役に立つからです。</span>
+            </a>
+            <a href={withBase("/appendix/sources")} class="cd">
+              <span class="cd__head">
+                <Library size={17} stroke-width={2.1} aria-hidden="true" class="cd__icon" />
+                <span class="cd__title">出典一覧</span>
+              </span>
+              <span class="cd__summary">全章で参照した文献。本文の記述に疑いを持ったら、ここから原典に当たってください。それがこの本の正しい使い方です。</span>
+            </a>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .hero {
+      border-block-end: 1px solid var(--c-border);
+      background:
+        radial-gradient(120% 100% at 50% 0%, var(--c-accent-soft) 0%, transparent 62%),
+        var(--c-bg);
+    }
+    .hero__inner {
+      max-inline-size: 46rem;
+      margin-inline: auto;
+      padding: clamp(3rem, 9vw, 5.5rem) clamp(1rem, 4vw, 2rem) clamp(2.5rem, 7vw, 4rem);
+      text-align: center;
+    }
+    .hero__eyebrow {
+      margin: 0 0 0.7rem;
+      color: var(--c-accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+    }
+    .hero__title {
+      margin: 0 0 1.1rem;
+      font-size: clamp(1.9rem, 6vw, 2.9rem);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .hero__lead {
+      max-inline-size: 34em;
+      margin: 0 auto;
+      color: var(--c-text-muted);
+      font-size: clamp(0.9375rem, 2.4vw, 1.0625rem);
+      line-height: 1.95;
+      text-align: start;
+    }
+    .hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.7rem;
+      margin-block-start: 1.9rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      padding: 0.65rem 1.1rem;
+      border: 1px solid var(--c-border-strong);
+      border-radius: 0.6rem;
+      background: var(--c-surface);
+      color: var(--c-text);
+      font-size: 0.9375rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .btn:hover { background: var(--c-surface-2); }
+    .btn--primary {
+      border-color: transparent;
+      background: var(--c-accent);
+      color: var(--c-text-invert);
+    }
+    .btn--primary:hover { background: var(--c-accent-hover); color: var(--c-text-invert); }
+
+    .principles { border-block-end: 1px solid var(--c-border); background: var(--c-surface); }
+    .principles__inner {
+      display: grid;
+      gap: 1px;
+      max-inline-size: 74rem;
+      margin-inline: auto;
+    }
+    @media (min-width: 52rem) {
+      .principles__inner { grid-template-columns: repeat(3, 1fr); background: var(--c-border); }
+    }
+    .pr { padding: 1.5rem clamp(1rem, 4vw, 2rem); background: var(--c-surface); }
+    .pr__icon { color: var(--c-accent); }
+    .pr__title { margin: 0.6rem 0 0.4rem; font-size: 1rem; font-weight: 700; }
+    .pr__text { margin: 0; color: var(--c-text-muted); font-size: 0.875rem; line-height: 1.85; }
+
+    .toc__inner {
+      max-inline-size: 74rem;
+      margin-inline: auto;
+      padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem) 0;
+    }
+    .toc__heading {
+      margin: 0 0 2rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .toc__empty { color: var(--c-text-muted); font-size: 0.9375rem; }
+    .pt + .pt { margin-block-start: 2.5rem; }
+    .pt__title {
+      margin: 0 0 0.9rem;
+      padding-block-end: 0.45rem;
+      border-block-end: 1px solid var(--c-border);
+      color: var(--c-text-muted);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+    .pt__grid {
+      display: grid;
+      gap: 0.7rem;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+    }
+    .cd {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 0.95rem 1.1rem 1.05rem;
+      border: 1px solid var(--c-border);
+      border-radius: 0.6rem;
+      background: var(--c-surface);
+      color: var(--c-text);
+      text-decoration: none;
+    }
+    .cd:hover { border-color: var(--c-accent-line); background: var(--c-accent-soft); }
+    .cd__head { display: flex; align-items: flex-start; gap: 0.5em; }
+    .cd__icon { flex: none; margin-block-start: 0.25em; color: var(--c-accent); }
+    .cd__title { font-size: 0.9375rem; font-weight: 700; line-height: 1.65; }
+    .cd__summary { color: var(--c-text-muted); font-size: 0.8125rem; line-height: 1.8; }
+  </style>
+</BaseLayout>

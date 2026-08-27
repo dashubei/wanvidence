@@ -1,0 +1,19 @@
+# pnpm の設定。単一パッケージだが、pnpm 10 以降はこの種の設定を
+# package.json ではなくここから読むので、このファイルが必要になる。
+
+# 依存パッケージの postinstall を実行するかどうか。
+#
+# pnpm は既定でビルドスクリプトをブロックし、1つずつ可否を宣言させる。
+# ここは両方 false（実行しない）。install ごとに出ていた
+# ERR_PNPM_IGNORED_BUILDS の警告は、明示的に宣言することで止まる。
+#
+# false のままで動くことは実測済み:
+#   - esbuild … 実バイナリは optionalDependencies（@esbuild/linux-x64 等）で入るので、
+#               postinstall がなくても Astro / Vite のビルドは通る
+#   - lefthook … prepare の `lefthook install` で hooks を張る。
+#               `lefthook validate` が All good を返すことを確認した
+#
+# どちらかが動かなくなったら、該当する側を true に変える。
+allowBuilds:
+  esbuild: false
+  lefthook: false

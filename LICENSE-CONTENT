@@ -1,0 +1,81 @@
+# 本文のライセンス / License for the prose
+
+Copyright (c) 2026 dashubei
+
+## 対象 / Scope
+
+このファイルは、このリポジトリのうち**本文（散文）**に適用されます。
+
+- `src/content/**` — 本文（全29章の MDX）
+- `docs/**` — 調査報告と設計判断のログ
+
+**コードには適用されません。** `src/components/**`, `src/layouts/**`, `src/pages/**`,
+`src/lib/**`, `src/styles/**`, `scripts/**`, および設定ファイルは、リポジトリ直下の
+`LICENSE`（MIT）に従います。
+
+This file applies to the **prose** in this repository (`src/content/**` and `docs/**`).
+It does **not** apply to the code, which is covered by `LICENSE` (MIT).
+
+## ライセンス / License
+
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+(CC BY-NC-SA 4.0)
+
+- 概要 / Summary: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ja
+- 法的条文 / Legal code: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.ja
+
+### 許可されること / You may
+
+- 複製・再配布（媒体・形式を問わない）
+- 改変・翻訳して二次的著作物を作成し、再配布する
+
+Share and adapt the material, in any medium or format.
+
+### 条件 / Under these terms
+
+1. **表示（BY）** — 出典を明示すること。次の3点を含めてください。
+   - 作品名 `Wanvidence`
+   - 著作者 `dashubei`
+   - 元の URL（このリポジトリ、または公開サイト）
+   改変した場合は、改変したことを明記すること。
+
+2. **非営利（NC）** — 主として商業的な利益や金銭的報酬を目的とした利用はできません。
+
+3. **継承（SA）** — この作品を改変して配布する場合、同一のライセンス
+   （CC BY-NC-SA 4.0）で公開してください。
+
+Attribution, NonCommercial, ShareAlike. See the legal code above for the
+binding terms.
+
+## 引用部分について / Third-party quotations
+
+**重要**: この本は、学術論文・公的機関の資料・法令・業界団体の統計・個人の記録を
+多数引用しています。**引用された部分の権利は、それぞれの権利者に帰属します。**
+
+上記の CC BY-NC-SA 4.0 が及ぶのは、このリポジトリの著作者による**独自の表現**
+（構成・記述・要約・図表・注釈）に限られます。引用元の文章・図表・データを
+そのまま再利用する場合は、**引用元の条件をご自身で確認してください。**
+
+各記述の出典は本文の脚注と、サイトの「出典一覧」（`/appendix/sources`）に
+記載されています。
+
+**Important**: this book quotes extensively from academic papers, government
+publications, statutes, industry statistics, and personal accounts. Rights in
+the quoted material remain with their respective holders. The CC BY-NC-SA 4.0
+grant above covers only the original expression of this repository's author.
+If you wish to reuse quoted material directly, check the terms at its source.
+Citations appear in the footnotes of each chapter and in `/appendix/sources`.
+
+## 免責 / Disclaimer
+
+この本の医療・獣医療・法律に関する記述は、**獣医・トレーナー・専門家と話すための
+材料**であって、判断の代わりではありません。法令とガイドラインは改正されます。
+実行する前に一次情報を確認してください。
+
+本文は現状のまま提供され、その正確性・完全性・特定目的への適合性について、
+明示または黙示のいかんを問わず、いかなる保証もしません。
+
+The medical, veterinary, and legal content here is material for a conversation
+with a professional, not a substitute for their judgement. Statutes and
+guidelines change; verify against primary sources before acting. The prose is
+provided as is, without warranty of any kind.

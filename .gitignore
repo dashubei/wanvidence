@@ -1,0 +1,44 @@
+# 依存関係
+node_modules/
+
+# ビルド成果物
+dist/
+.astro/
+*.tsbuildinfo
+
+# 環境変数（公開リポジトリなので、取り違えを防ぐため広めに無視する）
+.env
+.env.*
+!.env.example
+
+# ログ
+*.log
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# pnpm のローカルストア（store-dir をリポジトリ内に向けた場合のみ生成される）
+.pnpm-store/
+
+# lefthook のローカル上書き（各自の環境用。コミットしない）
+lefthook-local.yml
+
+# Claude Code のローカル権限設定（環境固有。秘密情報は無いが、公開しても意味がない）
+# .claude/ ごとではなくこのファイルだけを除外する。
+# 今後 .claude/settings.json や .claude/agents/ を共有する余地を残すため。
+.claude/settings.local.json
+
+# エディタ / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# npm pack の出力
+*.tgz

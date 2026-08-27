@@ -1,0 +1,69 @@
+---
+/**
+ * 節の冒頭に置く「結論だけ」。3層構造の第1層。
+ * 忙しい読者・初心者がここだけ読んで行動できる粒度で書くこと。
+ */
+interface Props {
+  /** 各項目は HTML 文字列を許可する（強調やリンクを含められる） */
+  items: string[];
+  title?: string;
+}
+
+const { items, title = '結論' } = Astro.props;
+---
+
+<section class="kp" aria-label={title}>
+  <p class="kp__title">{title}</p>
+  <ol class="kp__list">
+    {items.map((item) => (
+      <li class="kp__item"><span set:html={item} /></li>
+    ))}
+  </ol>
+</section>
+
+<style>
+  .kp {
+    margin-block: 1.5rem 2rem;
+    padding: 1rem 1.2rem 1.1rem;
+    border: 1px solid var(--c-border-strong);
+    border-radius: 0.6rem;
+    background: var(--c-surface-2);
+  }
+  .kp__title {
+    margin: 0 0 0.6rem;
+    color: var(--c-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .kp__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: kp;
+  }
+  .kp__item {
+    display: flex;
+    gap: 0.7em;
+    counter-increment: kp;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.75;
+  }
+  .kp__item + .kp__item { margin-block-start: 0.55em; }
+  .kp__item::before {
+    content: counter(kp);
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 1.5em;
+    block-size: 1.5em;
+    margin-block-start: 0.18em;
+    border-radius: 999px;
+    background: var(--c-accent);
+    color: var(--c-text-invert);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+</style>

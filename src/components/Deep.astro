@@ -1,0 +1,69 @@
+---
+/**
+ * 深掘りの折りたたみ。3層構造の第3層。
+ *
+ *   第1層: KeyPoints（結論3行）      … 初心者はここだけで行動できる
+ *   第2層: 本文                      … 専門用語を避けた平易な記述
+ *   第3層: Deep（この要素）          … 研究の中身・数値・限界・出典
+ *
+ * <details> のネイティブ要素を使う（キーボード操作と読み上げが標準で担保される）。
+ */
+import ChevronRight from '@lucide/astro/icons/chevron-right';
+import Microscope from '@lucide/astro/icons/microscope';
+
+interface Props {
+  /** 例: "この数字はどの研究から来ているか" */
+  title: string;
+  open?: boolean;
+}
+
+const { title, open = false } = Astro.props;
+---
+
+<details class="deep" open={open}>
+  <summary class="deep__summary">
+    <ChevronRight size={16} stroke-width={2.4} aria-hidden="true" class="deep__chev" />
+    <Microscope size={15} stroke-width={2} aria-hidden="true" class="deep__mark" />
+    <span class="deep__title">{title}</span>
+  </summary>
+  <div class="deep__body"><slot /></div>
+</details>
+
+<style>
+  .deep {
+    margin-block: 1.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: 0.5rem;
+    background: var(--c-surface);
+    overflow: clip;
+  }
+  .deep__summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.7rem 0.9rem;
+    color: var(--c-text-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.5;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .deep__summary::-webkit-details-marker { display: none; }
+  .deep__summary:hover { background: var(--c-surface-2); color: var(--c-text); }
+  .deep__chev {
+    flex: none;
+    transition: transform 0.18s ease;
+  }
+  .deep[open] .deep__chev { transform: rotate(90deg); }
+  .deep__mark { flex: none; opacity: 0.75; }
+  .deep__title { flex: 1; }
+  .deep__body {
+    padding: 0.2rem 1.1rem 1rem;
+    border-block-start: 1px solid var(--c-border);
+    font-size: 0.9375rem;
+  }
+  .deep__body :global(> * + *) { margin-block-start: 0.9em; }
+  .deep__body :global(> *:first-child) { margin-block-start: 0.9em; }
+</style>

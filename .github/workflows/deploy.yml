@@ -1,0 +1,90 @@
+# 本を GitHub Pages に配信する。
+#
+# リポジトリ名をどこにも書いていないのが要点。
+# 配信先は actions/configure-pages が実行時に教えてくれるので、その出力を
+# 環境変数（SITE / BASE）でビルドに渡す。astro.config.mjs がそれを読む。
+# ユーザーサイト（<user>.github.io、base なし）でもプロジェクトサイト
+# （base が /<repo>）でも、設定を書き換えずにそのまま動く。
+#
+# テスト・リンターはここでは走らせない（lefthook 側でやる方針）。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Actions タブから手で流せるようにしておく（設定変更後の再配信に使う）
+  workflow_dispatch:
+
+# GITHUB_TOKEN に必要な権限だけ与える。
+# id-token は deploy-pages が OIDC で配信するために必要。
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 連続 push でデプロイが競合しないようにする。
+# 走っているデプロイは止めない（途中で切ると中途半端な状態で公開される）。
+# 待ち行列に溜まったものは、最新の1つだけ残る。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: ビルド
+    runs-on: ubuntu-latest
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v7
+
+      # pnpm は setup-node より先に入れる。
+      # 後述の cache: 'pnpm' は pnpm store path を実行して保存先を調べるので、
+      # 先に pnpm が PATH に無いとキャッシュの解決に失敗する。順序を入れ替えないこと。
+      #
+      # version は指定しない。package.json の packageManager を読ませて、
+      # ローカルと CI で pnpm のバージョンが食い違わないようにする。
+      # （packageManager が無いと version が必須になり、ここで失敗する）
+      - name: pnpm の用意
+        uses: pnpm/action-setup@v6
+
+      - name: Node の用意
+        uses: actions/setup-node@v7
+        with:
+          # ローカルは v24.14.0。.nvmrc も engines もないのでここで固定する
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Pages の設定を取得
+        id: pages
+        uses: actions/configure-pages@v6
+
+      # --frozen-lockfile で pnpm-lock.yaml を書き換えさせない。
+      # ロックと package.json がズレていたら、黙って解決せずに失敗させる。
+      - name: 依存をインストール
+        run: pnpm install --frozen-lockfile
+
+      - name: ビルド
+        env:
+          # origin は "https://<user>.github.io" 等。base_path は "/<repo>" か空文字。
+          # 空文字のときは astro.config.mjs 側で '/' に落ちる。
+          SITE: ${{ steps.pages.outputs.origin }}
+          BASE: ${{ steps.pages.outputs.base_path }}
+        run: pnpm run build
+
+      - name: 成果物をアップロード
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: 配信
+    needs: build
+    runs-on: ubuntu-latest
+    # 配信先の URL を Actions の画面に出すための宣言
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: GitHub Pages へ配信
+        id: deployment
+        uses: actions/deploy-pages@v5

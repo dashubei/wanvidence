@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+
+  // 既存コードに合わせている。実測で、この2つを入れると
+  // 整形による差分が 99 行から 5 行まで減った（2026-08-27, oxfmt 0.65.0）。
+  // シングルクォート: 既存コードは 101 対 9 でシングルが優勢。
+  // printWidth 100: 5ファイルすべて最大100文字で書かれている。
+  "singleQuote": true,
+  "printWidth": 100,
+
+  // 整形の対象は「コード」だけに絞る。理由はすべて実測にもとづく:
+  //   *.mdx / *.md — oxfmt は Markdown も整形できてしまう。29章に対して走らせると
+  //                  JSX 属性が改行され、'' が "" に変わり、1章で242行の差分が出た。
+  //                  原稿の書式は docs/decisions/02-style-guide.md の管轄なので触らない。
+  //   *.css        — global.css の CSS 変数は列が手で揃えてある。oxfmt はこれを崩し、
+  //                  oklch(26.0% ...) を oklch(26% ...) に丸める（360行の差分）。
+  //   *.json       — sortPackageJson が package.json のキー順を並べ替えてしまう。
+  //   *.yml/*.yaml — oxfmt は YAML も整形できる。.github/workflows/deploy.yml は
+  //                  デプロイ担当の管轄なので、JS のフォーマッタに触らせない。
+  // なお *.astro は oxfmt が対応していない（明示的に渡すと exit 2 で除外される）。
+  "ignorePatterns": [
+    "**/*.mdx",
+    "**/*.md",
+    "**/*.css",
+    "**/*.json",
+    "**/*.yml",
+    "**/*.yaml",
+    ".github/",
+    "dist/",
+    ".astro/",
+    "docs/"
+  ]
+}

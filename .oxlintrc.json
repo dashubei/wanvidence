@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+
+  // 方針: 「本当に壊れているコード」だけを止める。
+  // style / restriction / pedantic は入れていない。
+  // このリポジトリで実測すると style だけで 524 件出て、
+  // no-magic-numbers・id-length・no-ternary・no-continue のような
+  // 好みの問題が大半だったため（2026-08-27 時点、oxlint 1.80.0）。
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+
+  "rules": {
+    // 11 件すべてが「その場で作った配列」への .sort() だった。
+    // [...map.values()].sort() / .filter(...).sort() / readdirSync().sort() など、
+    // 元の配列を壊さないので toSorted() に直す意味がない。誤検知としてオフ。
+    "unicorn/no-array-sort": "off",
+
+    // 小さなヘルパーを使う場所のすぐ隣に置く書き方を否定する規則。
+    // src/pages/llms.txt.ts:44 の oneLine がこれに当たる。
+    // 「どこに関数を置くか」の好みの問題で、バグではない。しかも自動修正できないため、
+    // error のままにすると該当ファイルをコミットできなくなる。見えるように warn で残す。
+    "unicorn/consistent-function-scoping": "warn",
+
+    // src/lib/extract.ts:132 の正規表現に不要なエスケープが3件ある。
+    // 直すべき指摘だが、src/ は別の担当が編集中のため今は warn に落としてある。
+    // 修正されたら categories の correctness に戻す（この行を削除する）。
+    "eslint/no-useless-escape": "warn"
+  },
+
+  "ignorePatterns": ["dist/", ".astro/", "node_modules/", "docs/"]
+}

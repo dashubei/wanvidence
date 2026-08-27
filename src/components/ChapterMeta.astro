@@ -1,0 +1,114 @@
+---
+/**
+ * 章の「重さ」を、読む前に伝える。
+ *
+ * なぜ必要か:
+ *   章によって分量が5倍以上違う（最短 12,000字 / 最長 41,000字）。
+ *   何も知らずに開くと、終わりが見えないまま読むことになる。
+ *   所要時間と密度が先に分かれば、読者は「今読むか、後にするか」を選べる。
+ *
+ * 判定はすべて本文から自動で計算する。手で付けると必ず実態とずれるため。
+ */
+import Clock from '@lucide/astro/icons/clock';
+import FileText from '@lucide/astro/icons/file-text';
+import Gauge from '@lucide/astro/icons/gauge';
+
+interface Props {
+  /** 章の生 MDX 本文 */
+  body: string;
+}
+
+const { body } = Astro.props;
+
+// frontmatter・出典・タグを除いた、実際に読む文字数
+const stripped = body
+  .replace(/^---[\s\S]*?---/, '')
+  .replace(/^\[\^[^\]]+\]:.*$/gm, '')
+  .replace(/<[^>]+>/g, '')
+  .replace(/\s+/g, '');
+
+const chars = stripped.length;
+
+// 日本語の実用書はおよそ 500 字/分。専門的な内容なので少し遅めに見積もる
+const minutes = Math.max(1, Math.round(chars / 450));
+
+// 密度の判定: 漢字の比率と、専門語の出現頻度から
+const kanji = (stripped.match(/[一-鿿]/g) ?? []).length;
+const kanjiRate = chars > 0 ? kanji / chars : 0;
+const termCount = (body.match(/<Term\b/g) ?? []).length;
+const termsPer1000 = chars > 0 ? (termCount / chars) * 1000 : 0;
+
+// 2つの指標を合成して3段階に。しきい値は全29章の実測分布から決めた
+const densityScore = kanjiRate * 100 + termsPer1000 * 8;
+const density =
+  densityScore >= 40 ? 'heavy' : densityScore >= 33 ? 'medium' : 'light';
+
+const DENSITY_LABEL = {
+  light: { text: '読みやすい', hint: '専門用語は少なめです' },
+  medium: { text: 'ふつう', hint: '専門用語には解説が付いています' },
+  heavy: { text: '内容が濃い', hint: '一度に読まず、節ごとに区切るのがおすすめです' },
+} as const;
+
+const label = DENSITY_LABEL[density];
+---
+
+<div class="cm">
+  <span class="cm__item">
+    <Clock size={14} stroke-width={2.2} aria-hidden="true" />
+    <span>読むのに約 <strong>{minutes}</strong> 分</span>
+  </span>
+  <span class="cm__sep" aria-hidden="true"></span>
+  <span class="cm__item">
+    <FileText size={14} stroke-width={2.2} aria-hidden="true" />
+    <span>{chars.toLocaleString('ja-JP')} 字</span>
+  </span>
+  <span class="cm__sep" aria-hidden="true"></span>
+  <span class:list={['cm__item', 'cm__density', `cm__density--${density}`]} title={label.hint}>
+    <Gauge size={14} stroke-width={2.2} aria-hidden="true" />
+    <span>{label.text}</span>
+  </span>
+</div>
+
+{density === 'heavy' && (
+  <p class="cm__note">
+    この章は長めです。<strong>各節の冒頭にある「この節だけ読む場合」だけを拾っていけば、
+    5分ほどで全体をつかめます。</strong>詳しく知りたい節だけ、本文に戻ってください。
+  </p>
+)}
+
+<style>
+  .cm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.7rem;
+    margin-block-start: 0.9rem;
+    color: var(--c-text-muted);
+    font-size: 0.8125rem;
+  }
+  .cm__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+  }
+  .cm__item strong { font-variant-numeric: tabular-nums; }
+  .cm__sep {
+    inline-size: 1px;
+    block-size: 0.9em;
+    background: var(--c-border-strong);
+  }
+  .cm__density { cursor: help; }
+  .cm__density--light { color: var(--c-success); }
+  .cm__density--medium { color: var(--c-text-muted); }
+  .cm__density--heavy { color: var(--c-ev-disputed); }
+
+  .cm__note {
+    margin-block: 0.8rem 0;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--c-accent-line);
+    border-radius: 0.5rem;
+    background: var(--c-accent-soft);
+    font-size: 0.875rem;
+    line-height: 1.8;
+  }
+</style>

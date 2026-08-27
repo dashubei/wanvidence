@@ -1,0 +1,92 @@
+---
+/**
+ * エビデンス強度バッジ。
+ *
+ * 設計上の原則:
+ *   色だけで意味を伝えない。必ず「アイコン + 日本語ラベル」を同時に表示する。
+ *   （色覚特性・モノクロ印刷・低コントラスト環境でも判別できるようにするため）
+ */
+import ShieldCheck from '@lucide/astro/icons/shield-check';
+import CircleDot from '@lucide/astro/icons/circle-dot';
+import CircleDashed from '@lucide/astro/icons/circle-dashed';
+import MessageSquareQuote from '@lucide/astro/icons/message-square-quote';
+import Scale from '@lucide/astro/icons/scale';
+
+export type EvidenceLevel = 'strong' | 'moderate' | 'weak' | 'experience' | 'disputed';
+
+interface Props {
+  level: EvidenceLevel;
+  /** 補足情報。例: "n=3,432 / 2019年" */
+  note?: string;
+  class?: string;
+}
+
+const { level, note, class: className } = Astro.props;
+
+const MAP = {
+  strong: {
+    label: '強い根拠',
+    Icon: ShieldCheck,
+    desc: '系統的レビュー・メタ分析・ランダム化比較試験・大規模コホート研究に基づく',
+  },
+  moderate: {
+    label: '中程度の根拠',
+    Icon: CircleDot,
+    desc: '単一の観察研究や中規模の調査に基づく',
+  },
+  weak: {
+    label: '弱い根拠',
+    Icon: CircleDashed,
+    desc: '専門家の意見・小規模研究・症例報告・仕組みからの推論',
+  },
+  experience: {
+    label: '体験談',
+    Icon: MessageSquareQuote,
+    desc: '個人の記録。科学的根拠ではなく、実際にこう語られているという事実',
+  },
+  disputed: {
+    label: '論争中',
+    Icon: Scale,
+    desc: '研究の結果が割れている、または日本と海外で指針が異なる',
+  },
+} as const;
+
+const { label, Icon, desc } = MAP[level];
+---
+
+<span class:list={['ev', `ev--${level}`, className]} title={desc}>
+  <Icon size={13} stroke-width={2.4} aria-hidden="true" class="ev__icon" />
+  <span class="ev__label">{label}</span>
+  {note && <span class="ev__note">{note}</span>}
+</span>
+
+<style>
+  .ev {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.12em 0.55em 0.16em;
+    border: 1px solid var(--tint-border);
+    border-radius: 999px;
+    background: var(--tint-soft);
+    color: var(--tint);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+    vertical-align: 0.08em;
+    cursor: help;
+  }
+  .ev__icon { flex: none; }
+  .ev__note {
+    padding-inline-start: 0.4em;
+    border-inline-start: 1px solid var(--tint-border);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+  .ev--strong     { --tint: var(--c-ev-strong);   --tint-soft: var(--c-ev-strong-soft);   --tint-border: var(--c-ev-strong-border); }
+  .ev--moderate   { --tint: var(--c-ev-moderate); --tint-soft: var(--c-ev-moderate-soft); --tint-border: var(--c-ev-moderate-border); }
+  .ev--weak       { --tint: var(--c-ev-weak);     --tint-soft: var(--c-ev-weak-soft);     --tint-border: var(--c-ev-weak-border); }
+  .ev--experience { --tint: var(--c-ev-exp);      --tint-soft: var(--c-ev-exp-soft);      --tint-border: var(--c-ev-exp-border); }
+  .ev--disputed   { --tint: var(--c-ev-disputed); --tint-soft: var(--c-ev-disputed-soft); --tint-border: var(--c-ev-disputed-border); }
+</style>

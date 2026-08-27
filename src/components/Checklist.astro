@@ -1,0 +1,195 @@
+---
+/**
+ * 進捗が保存されるチェックリスト。
+ *
+ * チェック状態はこのブラウザの localStorage にのみ保存される。
+ * （外部には一切送信されない。別の端末とも同期しない。）
+ *
+ * 目的は装飾ではなく、達成の可視化そのもの。
+ * 大きな準備を小さく割り、完了が目に見えることで次の行動が起きやすくなる。
+ */
+import ListChecks from '@lucide/astro/icons/list-checks';
+import PartyPopper from '@lucide/astro/icons/party-popper';
+
+interface Props {
+  /** 保存キー。文書全体で一意にすること。例: "prep-2weeks" */
+  id: string;
+  title: string;
+  /** 各項目は HTML 文字列を許可する */
+  items: string[];
+  note?: string;
+}
+
+const { id, title, items, note } = Astro.props;
+---
+
+<section class="cl" data-checklist={id} aria-label={title}>
+  <header class="cl__head">
+    <p class="cl__title">
+      <ListChecks size={16} stroke-width={2.2} aria-hidden="true" class="cl__icon" />
+      <span>{title}</span>
+    </p>
+    <p class="cl__count" data-progress-label aria-live="polite">0 / {items.length}</p>
+  </header>
+
+  <div class="cl__bar" data-progress-bar role="presentation"><span class="cl__barFill"></span></div>
+
+  <ul class="cl__list">
+    {items.map((item, i) => (
+      <li class="cl__item">
+        <label class="cl__label">
+          <input type="checkbox" class="cl__box" data-index={i} />
+          <span class="cl__text" set:html={item} />
+        </label>
+      </li>
+    ))}
+  </ul>
+
+  <p class="cl__done" data-done-message hidden>
+    <PartyPopper size={15} stroke-width={2.2} aria-hidden="true" />
+    <span>ここは全部終わりました。</span>
+  </p>
+
+  {note && <p class="cl__note">{note}</p>}
+</section>
+
+<script>
+  // チェックリストは複数配置されうるので、まとめて初期化する。
+  // localStorage が使えない環境（プライベートウィンドウ、サイトデータ拒否設定など）でも
+  // チェック操作自体は動作し続けるよう、読み書きは必ず try/catch で包む。
+  const roots = document.querySelectorAll<HTMLElement>('[data-checklist]');
+
+  roots.forEach((root) => {
+    const key = `wanvidence:checklist:${root.dataset.checklist}`;
+    const boxes = Array.from(root.querySelectorAll<HTMLInputElement>('input.cl__box'));
+    const label = root.querySelector<HTMLElement>('[data-progress-label]');
+    const bar = root.querySelector<HTMLElement>('[data-progress-bar]');
+    const doneMsg = root.querySelector<HTMLElement>('[data-done-message]');
+
+    let state: Record<string, boolean> = {};
+    try {
+      state = JSON.parse(localStorage.getItem(key) ?? '{}') ?? {};
+    } catch {
+      state = {};
+    }
+
+    const render = () => {
+      const done = boxes.filter((b) => b.checked).length;
+      const total = boxes.length;
+      const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+      if (label) label.textContent = `${done} / ${total}`;
+      if (bar) bar.style.setProperty('--pct', `${pct}%`);
+      if (doneMsg) doneMsg.hidden = !(total > 0 && done === total);
+    };
+
+    boxes.forEach((box) => {
+      const i = box.dataset.index ?? '';
+      if (state[i]) box.checked = true;
+      box.addEventListener('change', () => {
+        state[i] = box.checked;
+        try {
+          localStorage.setItem(key, JSON.stringify(state));
+        } catch {
+          /* 保存できなくても操作は継続させる */
+        }
+        render();
+      });
+    });
+
+    render();
+  });
+</script>
+
+<style>
+  .cl {
+    margin-block: 1.8rem;
+    border: 1px solid var(--c-border-strong);
+    border-radius: 0.6rem;
+    background: var(--c-surface);
+    overflow: clip;
+  }
+  .cl__head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 0.65rem;
+  }
+  .cl__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    flex: 1;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .cl__icon { flex: none; color: var(--c-accent); }
+  .cl__count {
+    margin: 0;
+    color: var(--c-text-muted);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cl__bar {
+    block-size: 3px;
+    background: var(--c-surface-3);
+  }
+  .cl__barFill {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--pct, 0%);
+    background: var(--c-accent);
+    transition: inline-size 0.25s ease;
+  }
+  .cl__list {
+    margin: 0;
+    padding: 0.4rem 0 0.5rem;
+    list-style: none;
+  }
+  .cl__item + .cl__item { border-block-start: 1px solid var(--c-border); }
+  .cl__label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7em;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+  .cl__label:hover { background: var(--c-surface-2); }
+  .cl__box {
+    flex: none;
+    inline-size: 1.15em;
+    block-size: 1.15em;
+    margin-block-start: 0.35em;
+    accent-color: var(--c-accent);
+    cursor: pointer;
+  }
+  .cl__box:checked + .cl__text {
+    color: var(--c-text-faint);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .cl__done {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    padding: 0.6rem 1rem;
+    border-block-start: 1px solid var(--c-success-border);
+    background: var(--c-success-soft);
+    color: var(--c-success);
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  .cl__note {
+    margin: 0;
+    padding: 0.6rem 1rem;
+    border-block-start: 1px solid var(--c-border);
+    color: var(--c-text-muted);
+    font-size: 0.8125rem;
+  }
+</style>

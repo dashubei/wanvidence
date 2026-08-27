@@ -1,0 +1,137 @@
+---
+/**
+ * head に入れるメタ情報の集約。
+ *
+ * 使い方: BaseLayout の <head> の中でこれを1回呼ぶ。
+ *   <title> / description / canonical / robots / OG / Twitter Card / JSON-LD が
+ *   すべてここから出る。ページ側は「何のページか」だけを渡す。
+ *
+ * 前提:
+ *   - オリジンは `Astro.site`（astro.config.mjs の site）から取る。未設定でも落ちない
+ *   - ベースパスは `import.meta.env.BASE_URL` から取る（seo.ts 側で処理）
+ *   - canonical は `Astro.url.pathname`（base 込み）を末尾スラッシュ付きに正規化したもの。
+ *     build.format が 'directory' なので、配信される実体は `/chapters/xx/` 側になる
+ */
+import {
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  SITE_LOCALE,
+  DEFAULT_OG_IMAGE,
+  OG_IMAGE_SIZE,
+  absoluteUrl,
+  canonicalUrl,
+  fitDescription,
+  pageTitle,
+  buildGraph,
+  serializeJsonLd,
+  type ChapterSeo,
+  type ChapterListItem,
+} from '../lib/seo';
+
+interface Props {
+  /** ページ固有の見出し。サイト名は付けない。トップページでは省略する */
+  title?: string;
+  /** 省略時は章の summary、それも無ければサイト共通の説明を使う */
+  description?: string;
+  kind?: 'home' | 'chapter' | 'page';
+  /** 検索結果に出したくないページ。draft の章もここで noindex にする */
+  noindex?: boolean;
+  /** 章ページで渡す。JSON-LD の Article / citation / keywords の材料になる */
+  chapter?: ChapterSeo;
+  /** トップページで渡す。Book.hasPart になる */
+  chapters?: ChapterListItem[];
+  /** パン屑。path はサイト内の絶対パス（base なし）。最後の要素は path を省略する */
+  breadcrumbs?: { name: string; path?: string }[];
+  /** 用語集ページで渡す。DefinedTermSet になる */
+  terms?: { term: string; desc: string }[];
+  /** 目次的なページは CollectionPage を指定する */
+  pageType?: 'WebPage' | 'CollectionPage';
+  /** OG 画像を個別に差し替える（サイト内の絶対パス） */
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  kind = 'page',
+  noindex = false,
+  chapter,
+  chapters,
+  breadcrumbs,
+  terms,
+  pageType,
+  image,
+} = Astro.props;
+
+const site = Astro.site;
+const isHome = kind === 'home';
+
+const fullTitle = pageTitle(title ?? chapter?.title, isHome);
+
+// 説明文の優先順位: 明示指定 → 章の summary（+ audience） → サイト共通
+const rawDescription = description ?? chapter?.summary ?? SITE_DESCRIPTION;
+const metaDescription = fitDescription(rawDescription, chapter?.audience);
+
+const canonical = canonicalUrl(Astro.url.pathname, site);
+
+// draft の章は noindex。robots に nofollow は付けない
+// （内部リンクは辿ってもらってよい。索引に入れたくないだけ）
+const robots = noindex ? 'noindex, follow' : 'index, follow';
+
+const ogImagePath = image ?? DEFAULT_OG_IMAGE;
+const ogImage = ogImagePath ? absoluteUrl(ogImagePath, site) : undefined;
+
+// 画像が無い状態で summary_large_image を宣言すると、
+// 大きい画像枠を約束して何も出ないカードになる。画像の有無で形式を変える
+const twitterCard = ogImage ? 'summary_large_image' : 'summary';
+
+const jsonLd = serializeJsonLd(
+  buildGraph({
+    site,
+    url: canonical,
+    fullTitle,
+    description: metaDescription,
+    kind,
+    pageType,
+    chapter,
+    chapters,
+    breadcrumbs,
+    terms,
+    image: ogImage,
+  }),
+);
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={metaDescription} />
+<link rel="canonical" href={canonical} />
+<meta name="robots" content={robots} />
+
+<meta property="og:type" content={kind === 'chapter' ? 'article' : 'website'} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={metaDescription} />
+<meta property="og:url" content={canonical} />
+<meta property="og:site_name" content={SITE_NAME} />
+<meta property="og:locale" content={SITE_LOCALE} />
+{ogImage && (
+  <>
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(OG_IMAGE_SIZE.width)} />
+    <meta property="og:image:height" content={String(OG_IMAGE_SIZE.height)} />
+    <meta property="og:image:alt" content={fullTitle} />
+  </>
+)}
+{kind === 'chapter' && chapter?.updated && (
+  <>
+    <meta property="article:published_time" content={chapter.updated} />
+    <meta property="article:modified_time" content={chapter.updated} />
+    <meta property="article:section" content={chapter.part} />
+  </>
+)}
+
+<meta name="twitter:card" content={twitterCard} />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={metaDescription} />
+{ogImage && <meta name="twitter:image" content={ogImage} />}
+
+<script type="application/ld+json" is:inline set:html={jsonLd} />

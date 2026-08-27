@@ -1,0 +1,230 @@
+---
+import '../styles/global.css';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import Seo from '../components/Seo.astro';
+import Search from '@lucide/astro/icons/search';
+import PawPrint from '@lucide/astro/icons/paw-print';
+import Menu from '@lucide/astro/icons/menu';
+import { withBase } from '../lib/url';
+import { SITE_NAME, SITE_LANG, type ChapterSeo, type ChapterListItem } from '../lib/seo';
+
+interface Props {
+  /** ページ固有の見出し。サイト名は付けない（Seo が組み立てる）。トップでは省略する */
+  title?: string;
+  description?: string;
+  /** 章ページではサイドバーを出す */
+  withSidebar?: boolean;
+
+  // ここから下は Seo にそのまま渡す。head のメタ情報は Seo が1箇所で作る。
+  kind?: 'home' | 'chapter' | 'page';
+  noindex?: boolean;
+  chapter?: ChapterSeo;
+  chapters?: ChapterListItem[];
+  breadcrumbs?: { name: string; path?: string }[];
+  terms?: { term: string; desc: string }[];
+  pageType?: 'WebPage' | 'CollectionPage';
+}
+
+const {
+  title,
+  description,
+  withSidebar = false,
+  kind = 'page',
+  noindex = false,
+  chapter,
+  chapters,
+  breadcrumbs,
+  terms,
+  pageType,
+} = Astro.props;
+
+const siteName = SITE_NAME;
+---
+
+<!doctype html>
+<html lang={SITE_LANG}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- 明示しておくと、ブラウザが /favicon.ico を暗黙に取りに行かなくなる。
+         base 付きで配信するとオリジン直下には何も無いので、404 をコンソールに出さないため。 -->
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+
+    <!-- title / description / canonical / robots / OG / JSON-LD はすべてここから出る -->
+    <Seo
+      title={title}
+      description={description}
+      kind={kind}
+      noindex={noindex}
+      chapter={chapter}
+      chapters={chapters}
+      breadcrumbs={breadcrumbs}
+      terms={terms}
+      pageType={pageType}
+    />
+
+    <!-- テーマの初回適用。描画前に実行して、切り替わりのちらつきを防ぐ -->
+    <script is:inline>
+      (() => {
+        try {
+          const t = localStorage.getItem('wanvidence:theme');
+          if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
+        } catch (_) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">本文へ移動</a>
+
+    <header class="hd">
+      <div class="hd__inner">
+        {withSidebar && (
+          <button type="button" class="hd__menu" data-sidebar-open aria-label="目次を開く">
+            <Menu size={19} stroke-width={2} aria-hidden="true" />
+          </button>
+        )}
+
+        <a href={withBase("/")} class="hd__brand">
+          <PawPrint size={19} stroke-width={2.2} aria-hidden="true" class="hd__brandIcon" />
+          <span class="hd__brandText" lang="en">{siteName}</span>
+        </a>
+
+        <nav class="hd__nav" aria-label="サイト内ナビゲーション">
+          <a href={withBase("/legend")} class="hd__link">読み方</a>
+          <a href={withBase("/search")} class="hd__search">
+            <Search size={15} stroke-width={2.2} aria-hidden="true" />
+            <span>検索</span>
+          </a>
+          <ThemeToggle />
+        </nav>
+      </div>
+    </header>
+
+    <slot />
+
+    <footer class="ft">
+      <div class="ft__inner">
+        <p class="ft__note">
+          この本の医療・法律に関する記述は、獣医師・自治体・専門家に相談するための
+          <strong>材料</strong>であって、その判断を置き換えるものではありません。
+          いま症状が出ている犬について、この本で自己判断しないでください。
+          法令とガイドラインは改正されます。実行前に必ず一次情報を確認してください。
+        </p>
+        <p class="ft__meta">チェックの記録はこのブラウザの中だけに保存され、外部には送信されません。</p>
+      </div>
+    </footer>
+
+    <script>
+      // 幅の広い表は、ページ全体を横スクロールさせず、表の中だけでスクロールさせる。
+      // role="region" + tabindex="0" にしてキーボードでもスクロールできるようにする。
+      document.querySelectorAll<HTMLTableElement>('.prose table').forEach((table) => {
+        if (table.parentElement?.classList.contains('table-scroll')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'table-scroll';
+        wrap.setAttribute('role', 'region');
+        wrap.setAttribute('tabindex', '0');
+        wrap.setAttribute('aria-label', '表（横スクロールできます）');
+        table.replaceWith(wrap);
+        wrap.appendChild(table);
+      });
+    </script>
+
+    <style>
+      .hd {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 30;
+        border-block-end: 1px solid var(--c-border);
+        background: color-mix(in oklab, var(--c-bg) 88%, transparent);
+        backdrop-filter: saturate(1.4) blur(10px);
+      }
+      .hd__inner {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        max-inline-size: 88rem;
+        margin-inline: auto;
+        padding: 0.55rem clamp(0.85rem, 3vw, 1.5rem);
+      }
+      .hd__menu {
+        display: grid;
+        place-items: center;
+        inline-size: 2.25rem;
+        block-size: 2.25rem;
+        padding: 0;
+        border: 1px solid var(--c-border);
+        border-radius: 0.5rem;
+        background: var(--c-surface);
+        color: var(--c-text-muted);
+        cursor: pointer;
+      }
+      .hd__menu:hover { background: var(--c-surface-2); color: var(--c-text); }
+      @media (min-width: 68rem) { .hd__menu { display: none; } }
+
+      .hd__brand {
+        display: flex;
+        align-items: center;
+        gap: 0.45em;
+        margin-inline-end: auto;
+        color: var(--c-text);
+        font-size: 0.9375rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      .hd__brandIcon { flex: none; color: var(--c-accent); }
+      .hd__brandText { white-space: nowrap; }
+
+      .hd__nav { display: flex; align-items: center; gap: 0.4rem; }
+      .hd__link {
+        padding: 0.45rem 0.6rem;
+        border-radius: 0.5rem;
+        color: var(--c-text-muted);
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .hd__link:hover { background: var(--c-surface-2); color: var(--c-text); }
+      .hd__search {
+        display: flex;
+        align-items: center;
+        gap: 0.35em;
+        padding: 0.45rem 0.75rem;
+        border: 1px solid var(--c-border);
+        border-radius: 0.5rem;
+        background: var(--c-surface);
+        color: var(--c-text-muted);
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .hd__search:hover { background: var(--c-surface-2); color: var(--c-text); }
+
+      .ft {
+        margin-block-start: 4rem;
+        border-block-start: 1px solid var(--c-border);
+        background: var(--c-surface);
+      }
+      .ft__inner {
+        max-inline-size: 60rem;
+        margin-inline: auto;
+        padding: 1.75rem clamp(0.85rem, 3vw, 1.5rem) 2.5rem;
+      }
+      .ft__note {
+        margin: 0 0 0.6rem;
+        color: var(--c-text-muted);
+        font-size: 0.8125rem;
+        line-height: 1.8;
+      }
+      .ft__meta {
+        margin: 0;
+        color: var(--c-text-faint);
+        font-size: 0.75rem;
+      }
+    </style>
+  </body>
+</html>

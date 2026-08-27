@@ -1,0 +1,156 @@
+---
+/**
+ * 論争中トピック。
+ *
+ * 本プロジェクトの誠実さを担保する中核コンポーネント。
+ * 「日本の慣行」と「国際的なガイドライン」が食い違う項目は、必ずこの形で並べる。
+ * どちらが正しいかを断定できない場合は、断定しないまま判断材料を示す。
+ */
+import Scale from '@lucide/astro/icons/scale';
+import MapPin from '@lucide/astro/icons/map-pin';
+import Globe from '@lucide/astro/icons/globe';
+import Stethoscope from '@lucide/astro/icons/stethoscope';
+
+interface Props {
+  topic: string;
+  /** 日本で一般的に行われていること */
+  japan?: string;
+  /** 国際的な学会ガイドラインが推奨していること */
+  intl?: string;
+  /** 現時点で言えること。断定できないなら断定しない */
+  verdict?: string;
+  /** 獣医師にこう質問するとよい、という具体的な問いの形 */
+  ask?: string;
+}
+
+const { topic, japan, intl, verdict, ask } = Astro.props;
+---
+
+<section class="dsp" aria-label={`論争中のトピック: ${topic}`}>
+  <p class="dsp__head">
+    <Scale size={16} stroke-width={2.2} aria-hidden="true" class="dsp__icon" />
+    <span class="dsp__kind">論争中</span>
+    <span class="dsp__topic">{topic}</span>
+  </p>
+
+  {(japan || intl) && (
+    <div class="dsp__cols">
+      {japan && (
+        <div class="dsp__col">
+          <p class="dsp__colhead">
+            <MapPin size={13} stroke-width={2.4} aria-hidden="true" />
+            <span>日本で一般的なやり方</span>
+          </p>
+          <p class="dsp__coltext" set:html={japan} />
+        </div>
+      )}
+      {intl && (
+        <div class="dsp__col">
+          <p class="dsp__colhead">
+            <Globe size={13} stroke-width={2.4} aria-hidden="true" />
+            <span>国際的なガイドライン</span>
+          </p>
+          <p class="dsp__coltext" set:html={intl} />
+        </div>
+      )}
+    </div>
+  )}
+
+  <div class="dsp__body"><slot /></div>
+
+  {verdict && (
+    <p class="dsp__verdict">
+      <span class="dsp__verdictLabel">現時点で言えること</span>
+      <span set:html={verdict} />
+    </p>
+  )}
+
+  {ask && (
+    <p class="dsp__ask">
+      <Stethoscope size={14} stroke-width={2.2} aria-hidden="true" />
+      <span class="dsp__askLabel">獣医師にこう聞く</span>
+      <span class="dsp__askText" set:html={ask} />
+    </p>
+  )}
+</section>
+
+<style>
+  .dsp {
+    margin-block: 1.8rem;
+    border: 1px solid var(--c-ev-disputed-border);
+    border-radius: 0.6rem;
+    background: var(--c-bg);
+    overflow: clip;
+  }
+  .dsp__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin: 0;
+    padding: 0.65rem 1rem;
+    background: var(--c-ev-disputed-soft);
+    border-block-end: 1px solid var(--c-ev-disputed-border);
+    color: var(--c-ev-disputed);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+  .dsp__icon { flex: none; }
+  .dsp__kind { font-weight: 700; }
+  .dsp__topic {
+    padding-inline-start: 0.55em;
+    border-inline-start: 1px solid var(--c-ev-disputed-border);
+    color: var(--c-text);
+    font-weight: 700;
+  }
+  .dsp__cols {
+    display: grid;
+    gap: 1px;
+    background: var(--c-border);
+  }
+  @media (min-width: 44rem) {
+    .dsp__cols { grid-template-columns: 1fr 1fr; }
+  }
+  .dsp__col { padding: 0.85rem 1rem; background: var(--c-bg); }
+  .dsp__colhead {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin: 0 0 0.35rem;
+    color: var(--c-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .dsp__coltext { margin: 0; font-size: 0.9375rem; }
+  .dsp__body { padding-inline: 1rem; font-size: 0.9375rem; }
+  .dsp__body :global(> *) { margin-block: 0.85em; }
+  .dsp__verdict {
+    display: flow-root;
+    margin: 0;
+    padding: 0.8rem 1rem;
+    border-block-start: 1px solid var(--c-border);
+    background: var(--c-surface);
+    font-size: 0.9375rem;
+  }
+  .dsp__verdictLabel {
+    display: block;
+    margin-block-end: 0.25rem;
+    color: var(--c-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .dsp__ask {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45em;
+    margin: 0;
+    padding: 0.7rem 1rem;
+    border-block-start: 1px solid var(--c-border);
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-size: 0.875rem;
+  }
+  .dsp__askLabel { font-weight: 700; }
+  .dsp__askText { flex: 1 1 14rem; color: var(--c-text); }
+</style>

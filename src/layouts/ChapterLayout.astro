@@ -1,0 +1,495 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ChapterNav from '../components/ChapterNav.astro';
+import ChapterMeta from '../components/ChapterMeta.astro';
+import * as icons from '@lucide/astro';
+import ArrowLeft from '@lucide/astro/icons/arrow-left';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import ArrowUp from '@lucide/astro/icons/arrow-up';
+import X from '@lucide/astro/icons/x';
+import type { MarkdownHeading } from 'astro';
+import { withBase } from '../lib/url';
+
+interface ChapterMetaData {
+  id: string;
+  title: string;
+  navTitle?: string;
+  part: string;
+  summary: string;
+  order: number;
+  icon: string;
+  audience?: string;
+  updated?: string;
+}
+
+interface Props {
+  chapter: ChapterMetaData;
+  headings: MarkdownHeading[];
+  prev?: { id: string; title: string } | null;
+  next?: { id: string; title: string } | null;
+  /** 読了時間・密度の算出に使う生の本文 */
+  body?: string;
+}
+
+const { chapter, headings, prev, next, body } = Astro.props;
+const iconMap = icons as unknown as Record<string, any>;
+const Icon = iconMap[chapter.icon] ?? iconMap.BookOpen;
+
+// 目次は h2 と h3 まで。h4 以降は細かすぎて一覧の役に立たない
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+<BaseLayout
+  kind="chapter"
+  withSidebar
+  chapter={{
+    id: chapter.id,
+    title: chapter.title,
+    part: chapter.part,
+    summary: chapter.summary,
+    order: chapter.order,
+    audience: chapter.audience,
+    updated: chapter.updated,
+    // 出典（脚注）と用語を JSON-LD の citation / keywords に落とす材料
+    body,
+  }}
+  breadcrumbs={[{ name: 'トップ', path: '/' }, { name: chapter.navTitle ?? chapter.title }]}
+>
+  <!-- 読み進み具合。1章が長いので、現在地が分かるようにする -->
+  <div class="prog" data-progress role="presentation"><span class="prog__fill"></span></div>
+
+  <div class="pg">
+    <!-- 章ナビ（デスクトップ: 固定 / モバイル: ドロワー） -->
+    <div class="pg__scrim" data-sidebar-scrim hidden></div>
+    <aside class="pg__side" data-sidebar>
+      <div class="pg__sideHead">
+        <span class="pg__sideTitle">目次</span>
+        <button type="button" class="pg__sideClose" data-sidebar-close aria-label="目次を閉じる">
+          <X size={18} stroke-width={2} aria-hidden="true" />
+        </button>
+      </div>
+      <div class="pg__sideBody">
+        <ChapterNav currentId={chapter.id} />
+      </div>
+    </aside>
+
+    <main id="main" class="pg__main">
+      <article class="ch">
+        <header class="ch__head">
+          <p class="ch__part">
+            <Icon size={14} stroke-width={2.2} aria-hidden="true" />
+            <span>{chapter.part}</span>
+          </p>
+          <h1 class="ch__title">{chapter.title}</h1>
+          <p class="ch__summary">{chapter.summary}</p>
+          {body && <ChapterMeta body={body} />}
+          {chapter.audience && (
+            <p class="ch__audience"><span class="ch__audienceLabel">この章を読むとよい人</span>{chapter.audience}</p>
+          )}
+        </header>
+
+        {toc.length > 1 && (
+          <details class="ch__toc">
+            <summary class="ch__tocSummary">この章の見出し（{toc.length}）</summary>
+            <ol class="ch__tocList">
+              {toc.map((h) => (
+                <li class:list={['ch__tocItem', h.depth === 3 && 'ch__tocItem--sub']}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
+
+        <div class="prose" data-pagefind-body>
+          <slot />
+        </div>
+      </article>
+
+      <nav class="pn" aria-label="前後の章">
+        {prev ? (
+          <a href={withBase(`/chapters/${prev.id}`)} class="pn__link pn__link--prev">
+            <ArrowLeft size={15} stroke-width={2.2} aria-hidden="true" />
+            <span class="pn__body">
+              <span class="pn__label">前の章</span>
+              <span class="pn__title">{prev.title}</span>
+            </span>
+          </a>
+        ) : <span />}
+        {next ? (
+          <a href={withBase(`/chapters/${next.id}`)} class="pn__link pn__link--next">
+            <span class="pn__body">
+              <span class="pn__label">次の章</span>
+              <span class="pn__title">{next.title}</span>
+            </span>
+            <ArrowRight size={15} stroke-width={2.2} aria-hidden="true" />
+          </a>
+        ) : <span />}
+      </nav>
+    </main>
+
+    <!-- 章内の見出し。画面が広いときだけ、本文の横に常に出す -->
+    {toc.length > 1 && (
+      <aside class="pg__toc">
+        {/* 見出しの文字列を nav の読み上げ名に使う。aside と nav の両方に同じ名前を
+            付けると同じ名前のランドマークが2つできるので、名前は nav 側だけに置く。 */}
+        <p class="pg__tocTitle" id="pg-toc-title">この章の見出し</p>
+        <nav class="tc" aria-labelledby="pg-toc-title">
+          <ol class="tc__list">
+            {toc.map((h) => (
+              <li class:list={['tc__item', h.depth === 3 && 'tc__item--sub']}>
+                <a href={`#${h.slug}`} class="tc__link" data-toc-link={h.slug}>{h.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
+    )}
+  </div>
+
+  <button type="button" class="top" data-to-top aria-label="ページの先頭に戻る" hidden>
+    <ArrowUp size={17} stroke-width={2.2} aria-hidden="true" />
+  </button>
+
+  <script>
+    // --- モバイルの目次ドロワー ---
+    const side = document.querySelector<HTMLElement>('[data-sidebar]');
+    const scrim = document.querySelector<HTMLElement>('[data-sidebar-scrim]');
+    const openBtn = document.querySelector<HTMLElement>('[data-sidebar-open]');
+    const closeBtn = document.querySelector<HTMLElement>('[data-sidebar-close]');
+
+    const setOpen = (open: boolean) => {
+      if (!side || !scrim) return;
+      side.dataset.open = String(open);
+      scrim.hidden = !open;
+      document.body.style.overflow = open ? 'hidden' : '';
+      if (open) closeBtn?.focus();
+      else openBtn?.focus();
+    };
+
+    openBtn?.addEventListener('click', () => setOpen(true));
+    closeBtn?.addEventListener('click', () => setOpen(false));
+    scrim?.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && side?.dataset.open === 'true') setOpen(false);
+    });
+
+    // --- 読み進み具合と「先頭に戻る」 ---
+    const progFill = document.querySelector<HTMLElement>('[data-progress] .prog__fill');
+    const toTop = document.querySelector<HTMLElement>('[data-to-top]');
+
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      if (progFill) progFill.style.setProperty('--pct', `${ratio * 100}%`);
+      if (toTop) toTop.hidden = window.scrollY < 600;
+    };
+
+    let ticking = false;
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          onScroll();
+          ticking = false;
+        });
+      },
+      { passive: true },
+    );
+    onScroll();
+
+    toTop?.addEventListener('click', () => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    });
+
+    // --- いま読んでいる見出しを、横の目次で示す ---
+    const tocLinks = new Map<string, HTMLElement>();
+    document.querySelectorAll<HTMLElement>('[data-toc-link]').forEach((el) => {
+      const slug = el.dataset.tocLink;
+      if (slug) tocLinks.set(slug, el);
+    });
+
+    if (tocLinks.size > 0) {
+      const targets = [...tocLinks.keys()]
+        .map((slug) => document.getElementById(slug))
+        .filter((el): el is HTMLElement => el !== null);
+
+      let activeSlug = '';
+      const setActive = (slug: string) => {
+        if (slug === activeSlug) return;
+        if (activeSlug) tocLinks.get(activeSlug)?.removeAttribute('data-active');
+        activeSlug = slug;
+        tocLinks.get(slug)?.setAttribute('data-active', 'true');
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          // 画面上部に最も近い、見えている見出しを現在地とする
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          if (visible[0]?.target.id) setActive(visible[0].target.id);
+        },
+        { rootMargin: '-72px 0px -72% 0px', threshold: 0 },
+      );
+
+      targets.forEach((t) => observer.observe(t));
+    }
+  </script>
+
+  <style>
+    /* --- 読み進み具合 --- */
+    .prog {
+      position: sticky;
+      inset-block-start: 3.35rem;
+      z-index: 29;
+      block-size: 2px;
+      background: transparent;
+    }
+    .prog__fill {
+      display: block;
+      block-size: 100%;
+      inline-size: var(--pct, 0%);
+      background: var(--c-accent);
+    }
+
+    .pg {
+      display: grid;
+      grid-template-columns: 1fr;
+      max-inline-size: 92rem;
+      margin-inline: auto;
+    }
+    @media (min-width: 68rem) {
+      .pg { grid-template-columns: 17rem minmax(0, 1fr); }
+    }
+    @media (min-width: 92rem) {
+      .pg { grid-template-columns: 17rem minmax(0, 1fr) 15rem; }
+    }
+
+    /* --- 章ナビ --- */
+    .pg__scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: hsl(var(--c-shadow) / 0.45);
+    }
+    @media (min-width: 68rem) { .pg__scrim { display: none; } }
+
+    .pg__side {
+      position: fixed;
+      inset-block: 0;
+      inset-inline-start: 0;
+      z-index: 50;
+      inline-size: min(19rem, 84vw);
+      display: flex;
+      flex-direction: column;
+      border-inline-end: 1px solid var(--c-border);
+      background: var(--c-bg);
+      transform: translateX(-101%);
+      transition: transform 0.22s ease;
+    }
+    .pg__side[data-open='true'] { transform: none; }
+    @media (min-width: 68rem) {
+      .pg__side {
+        position: sticky;
+        inset-block-start: 3.4rem;
+        block-size: calc(100dvh - 3.4rem);
+        inline-size: auto;
+        transform: none;
+        background: transparent;
+      }
+    }
+    .pg__sideHead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 0.9rem;
+      border-block-end: 1px solid var(--c-border);
+    }
+    @media (min-width: 68rem) { .pg__sideHead { display: none; } }
+    .pg__sideTitle { font-size: 0.875rem; font-weight: 700; }
+    .pg__sideClose {
+      display: grid;
+      place-items: center;
+      inline-size: 2rem;
+      block-size: 2rem;
+      padding: 0;
+      border: 1px solid var(--c-border);
+      border-radius: 0.4rem;
+      background: var(--c-surface);
+      color: var(--c-text-muted);
+      cursor: pointer;
+    }
+    .pg__sideBody {
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 1rem 0.6rem 2rem;
+    }
+
+    /* --- 本文 --- */
+    .pg__main {
+      min-inline-size: 0;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+
+    .ch__head {
+      max-inline-size: var(--measure-wide);
+      margin-block-end: 2rem;
+      padding-block-end: 1.4rem;
+      border-block-end: 1px solid var(--c-border);
+    }
+    .ch__part {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      margin: 0 0 0.5rem;
+      color: var(--c-accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .ch__title {
+      margin: 0 0 0.7rem;
+      font-size: clamp(1.6rem, 4.2vw, 2.1rem);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .ch__summary {
+      margin: 0;
+      color: var(--c-text-muted);
+      font-size: 1rem;
+      line-height: 1.85;
+    }
+    .ch__audience {
+      margin: 0.9rem 0 0;
+      padding: 0.5rem 0.8rem;
+      border-inline-start: 3px solid var(--c-accent-line);
+      background: var(--c-accent-soft);
+      border-radius: 0 0.4rem 0.4rem 0;
+      font-size: 0.875rem;
+    }
+    .ch__audienceLabel {
+      display: block;
+      color: var(--c-accent);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* --- 折りたたみ目次（横に目次が出ない画面のためのもの） --- */
+    .ch__toc {
+      max-inline-size: var(--measure-wide);
+      margin-block-end: 2.5rem;
+      border: 1px solid var(--c-border);
+      border-radius: 0.5rem;
+      background: var(--c-surface);
+      overflow: clip;
+    }
+    @media (min-width: 92rem) { .ch__toc { display: none; } }
+    .ch__tocSummary {
+      padding: 0.6rem 0.9rem;
+      color: var(--c-text-muted);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .ch__tocSummary:hover { background: var(--c-surface-2); color: var(--c-text); }
+    .ch__tocList {
+      margin: 0;
+      padding: 0.3rem 0.9rem 0.9rem;
+      border-block-start: 1px solid var(--c-border);
+      list-style: none;
+      font-size: 0.875rem;
+    }
+    .ch__tocItem { padding-block: 0.22rem; }
+    .ch__tocItem--sub { padding-inline-start: 1.2em; font-size: 0.8125rem; }
+    .ch__tocItem a { color: var(--c-text-muted); text-decoration: none; }
+    .ch__tocItem a:hover { color: var(--c-accent); text-decoration: underline; }
+
+    /* --- 横に常駐する見出し目次 --- */
+    .pg__toc { display: none; }
+    @media (min-width: 92rem) {
+      .pg__toc {
+        display: block;
+        position: sticky;
+        inset-block-start: 3.4rem;
+        align-self: start;
+        max-block-size: calc(100dvh - 4.5rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: clamp(1.5rem, 4vw, 3rem) 1.2rem 2rem 0;
+      }
+    }
+    .pg__tocTitle {
+      margin: 0 0 0.6rem;
+      color: var(--c-text-faint);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    .tc__list { margin: 0; padding: 0; list-style: none; }
+    .tc__item { border-inline-start: 2px solid var(--c-border); }
+    .tc__item--sub .tc__link { padding-inline-start: 1.6em; font-size: 0.75rem; }
+    .tc__link {
+      display: block;
+      padding: 0.3rem 0 0.3rem 0.75em;
+      color: var(--c-text-muted);
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      text-decoration: none;
+    }
+    .tc__link:hover { color: var(--c-text); }
+    .tc__item:has(.tc__link[data-active]) { border-inline-start-color: var(--c-accent); }
+    .tc__link[data-active] { color: var(--c-accent); font-weight: 700; }
+
+    /* --- 前後ナビ --- */
+    .pn {
+      display: grid;
+      gap: 0.75rem;
+      max-inline-size: var(--measure-wide);
+      margin-block-start: 4rem;
+    }
+    @media (min-width: 40rem) { .pn { grid-template-columns: 1fr 1fr; } }
+    .pn__link {
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--c-border);
+      border-radius: 0.6rem;
+      background: var(--c-surface);
+      color: var(--c-text);
+      text-decoration: none;
+    }
+    .pn__link:hover { border-color: var(--c-accent-line); background: var(--c-accent-soft); }
+    .pn__link--next { text-align: end; }
+    .pn__link--next .pn__body { margin-inline-start: auto; }
+    .pn__body { display: flex; flex-direction: column; min-inline-size: 0; }
+    .pn__label { color: var(--c-text-faint); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; }
+    .pn__title { font-size: 0.875rem; font-weight: 700; line-height: 1.6; }
+
+    /* --- 先頭に戻る --- */
+    .top {
+      position: fixed;
+      inset-block-end: 1.2rem;
+      inset-inline-end: 1.2rem;
+      z-index: 25;
+      display: grid;
+      place-items: center;
+      inline-size: 2.6rem;
+      block-size: 2.6rem;
+      padding: 0;
+      border: 1px solid var(--c-border-strong);
+      border-radius: 999px;
+      background: var(--c-surface);
+      color: var(--c-text-muted);
+      cursor: pointer;
+      box-shadow: 0 6px 20px -8px hsl(var(--c-shadow) / 0.4);
+    }
+    .top:hover { background: var(--c-surface-2); color: var(--c-text); }
+    .top[hidden] { display: none; }
+  </style>
+</BaseLayout>

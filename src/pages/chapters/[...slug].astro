@@ -1,0 +1,54 @@
+---
+import { getCollection, render } from 'astro:content';
+import ChapterLayout from '../../layouts/ChapterLayout.astro';
+import EvidenceBadge from '../../components/EvidenceBadge.astro';
+import Callout from '../../components/Callout.astro';
+import Deep from '../../components/Deep.astro';
+import KeyPoints from '../../components/KeyPoints.astro';
+import Experience from '../../components/Experience.astro';
+import Disputed from '../../components/Disputed.astro';
+import TodayAction from '../../components/TodayAction.astro';
+import Checklist from '../../components/Checklist.astro';
+import Term from '../../components/Term.astro';
+
+export async function getStaticPaths() {
+  const chapters = (await getCollection('chapters'))
+    .filter((c) => !c.data.draft)
+    .sort((a, b) => a.data.partOrder - b.data.partOrder || a.data.order - b.data.order);
+
+  return chapters.map((ch, i) => {
+    const prevEntry = chapters[i - 1];
+    const nextEntry = chapters[i + 1];
+    return {
+      params: { slug: ch.id },
+      props: {
+        entry: ch,
+        prev: prevEntry ? { id: prevEntry.id, title: prevEntry.data.navTitle ?? prevEntry.data.title } : null,
+        next: nextEntry ? { id: nextEntry.id, title: nextEntry.data.navTitle ?? nextEntry.data.title } : null,
+      },
+    };
+  });
+}
+
+const { entry, prev, next } = Astro.props;
+const { Content, headings } = await render(entry);
+
+// MDX 側では import 不要でこれらを使えるようにする
+const mdxComponents = {
+  EvidenceBadge,
+  Callout,
+  Deep,
+  KeyPoints,
+  Experience,
+  Disputed,
+  TodayAction,
+  Checklist,
+  Term,
+};
+
+const chapter = { id: entry.id, ...entry.data };
+---
+
+<ChapterLayout chapter={chapter} headings={headings} prev={prev} next={next} body={entry.body ?? ''}>
+  <Content components={mdxComponents} />
+</ChapterLayout>

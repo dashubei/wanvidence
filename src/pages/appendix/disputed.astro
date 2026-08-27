@@ -1,0 +1,89 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Disputed from '../../components/Disputed.astro';
+import { extractDisputed, type ChapterSource } from '../../lib/extract';
+import Scale from '@lucide/astro/icons/scale';
+import ArrowRight from '@lucide/astro/icons/arrow-right';
+import { withBase } from '../../lib/url';
+
+const entries = (await getCollection('chapters'))
+  .filter((c) => !c.data.draft && !c.id.startsWith('_'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const sources: ChapterSource[] = entries.map((e) => ({
+  id: e.id,
+  title: e.data.title,
+  order: e.data.order,
+  body: e.body ?? '',
+}));
+
+const items = extractDisputed(sources);
+---
+
+<BaseLayout
+  title="論争のあるトピック"
+  description="研究の結果が割れている論点、または日本で一般的に行われていることと国際的な学会の推奨が食い違う論点を、本文から集めた一覧です。どちらが正しいかは決めていません。代わりに、獣医師に何をどう聞けばよいかまで書いています。"
+  pageType="CollectionPage"
+>
+  <main id="main" class="wrap">
+    <header class="hd">
+      <p class="hd__kind"><Scale size={14} stroke-width={2.2} aria-hidden="true" /><span>付録A</span></p>
+      <h1 class="hd__title">論争のあるトピック</h1>
+      <p class="hd__lead">
+        本文中で【論争中】として扱った論点を、一箇所に集めました（{items.length}件）。
+        <strong>ここに載っている項目について「これが正解だ」と断言している情報源に出会ったら、
+        その人は論争の存在を知らないだけかもしれません。</strong>
+        判断を迫られたとき、何を根拠に迷えばよいかを確認するために使ってください。
+      </p>
+    </header>
+
+    {items.length === 0 ? (
+      <p class="empty">まだありません。章が増えるとここに自動で集まります。</p>
+    ) : (
+      <div class="list">
+        {items.map((d) => (
+          <section class="item">
+            <p class="item__from">
+              <a href={withBase(`/chapters/${d.chapter.id}`)}>
+                <span>{d.chapter.title}</span>
+                <ArrowRight size={13} stroke-width={2.2} aria-hidden="true" />
+              </a>
+            </p>
+            <Disputed
+              topic={d.topic}
+              japan={d.japan}
+              intl={d.intl}
+              verdict={d.verdict}
+              ask={d.ask}
+            />
+          </section>
+        ))}
+      </div>
+    )}
+  </main>
+
+  <style>
+    .wrap {
+      max-inline-size: 56rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+    .hd { margin-block-end: 2rem; padding-block-end: 1.3rem; border-block-end: 1px solid var(--c-border); }
+    .hd__kind {
+      display: flex; align-items: center; gap: 0.4em;
+      margin: 0 0 0.5rem; color: var(--c-ev-disputed);
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+    }
+    .hd__title { margin: 0 0 0.7rem; font-size: clamp(1.6rem, 4.2vw, 2.1rem); font-weight: 700; }
+    .hd__lead { margin: 0; color: var(--c-text-muted); font-size: 0.9375rem; line-height: 1.9; max-inline-size: 40em; }
+    .empty { color: var(--c-text-muted); }
+    .item + .item { margin-block-start: 2rem; }
+    .item__from { margin: 0 0 0.4rem; font-size: 0.75rem; font-weight: 700; }
+    .item__from a {
+      display: inline-flex; align-items: center; gap: 0.35em;
+      color: var(--c-text-muted); text-decoration: none;
+    }
+    .item__from a:hover { color: var(--c-accent); }
+  </style>
+</BaseLayout>

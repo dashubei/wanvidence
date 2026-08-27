@@ -1,0 +1,174 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SearchIcon from '@lucide/astro/icons/search';
+---
+
+<!-- noindex にする理由: 検索フォーム自体には読む内容が無く、索引に入れても
+     検索結果を1つ潰すだけになる。robots.txt では拒否していない（拒否すると
+     ページが読まれず、この noindex も読まれないため）。 -->
+<BaseLayout title="検索" description="本文を全文検索する" noindex>
+  <main id="main" class="wrap">
+    <h1 class="ttl">検索</h1>
+
+    <form class="sf" role="search" onsubmit="return false;">
+      <label class="sr-only" for="q">本文を検索</label>
+      <SearchIcon size={18} stroke-width={2.2} aria-hidden="true" class="sf__icon" />
+      <input
+        id="q"
+        type="search"
+        class="sf__input"
+        placeholder="調べたい言葉を入力（例: 甘噛み、ワクチン、費用）"
+        autocomplete="off"
+        autofocus
+      />
+    </form>
+
+    <p class="status" data-status aria-live="polite"></p>
+    <div class="results" data-results></div>
+  </main>
+
+  <script>
+    const input = document.querySelector<HTMLInputElement>('#q');
+    const status = document.querySelector<HTMLElement>('[data-status]');
+    const out = document.querySelector<HTMLElement>('[data-results]');
+
+    let pagefind: any = null;
+    let loadFailed = false;
+
+    // ベースパス配下（GitHub Pages のプロジェクトサイト）で配信されるときの2点。
+    // どちらも入れないと検索が黙って壊れる。
+    //   1. バンドルの場所。import した URL から自動検出されるので、base 付きで import する
+    //   2. 検索結果の URL。pagefind が索引を作るのは dist/ の中なので、生成される URL は
+    //      `/chapters/...` と base なしになる。baseUrl で前に付け足して補う
+    // base なしのローカル閲覧では BASE_URL が '/' なので、従来と同じパスになる。
+    const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
+
+    const ensurePagefind = async () => {
+      if (pagefind || loadFailed) return pagefind;
+      try {
+        // 検索インデックスはビルド時に生成される。
+        // 開発サーバー（npm run dev）では存在しないため、その場合はここで失敗する。
+        pagefind = await import(/* @vite-ignore */ `${base}/pagefind/pagefind.js`);
+        await pagefind.options({ baseUrl: `${base}/` });
+        await pagefind.init();
+      } catch {
+        loadFailed = true;
+        if (status) {
+          status.textContent =
+            '検索インデックスが見つかりません。npm run build でビルドしてから開いてください（開発サーバーでは検索は動きません）。';
+        }
+      }
+      return pagefind;
+    };
+
+    const escapeHtml = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
+      );
+
+    let seq = 0;
+    const run = async (query: string) => {
+      const mine = ++seq;
+      if (!out || !status) return;
+
+      if (query.trim().length === 0) {
+        out.innerHTML = '';
+        status.textContent = '';
+        return;
+      }
+
+      const pf = await ensurePagefind();
+      if (!pf) return;
+
+      status.textContent = '検索中…';
+      const search = await pf.search(query);
+      if (mine !== seq) return; // より新しい入力が来ていたら破棄
+
+      const results = await Promise.all(search.results.slice(0, 20).map((r: any) => r.data()));
+      if (mine !== seq) return;
+
+      status.textContent = `${search.results.length} 件見つかりました`;
+      out.innerHTML = results
+        .map(
+          (r: any) => `
+        <a class="rs" href="${escapeHtml(r.url)}">
+          <span class="rs__title">${escapeHtml(r.meta?.title ?? '(無題)')}</span>
+          <span class="rs__excerpt">${r.excerpt}</span>
+        </a>`,
+        )
+        .join('');
+    };
+
+    let timer: number | undefined;
+    input?.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => run(input.value), 180);
+    });
+  </script>
+
+  <style>
+    .wrap {
+      max-inline-size: 52rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+    .ttl { margin: 0 0 1.2rem; font-size: 1.6rem; font-weight: 700; }
+    .sf {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 0.95rem;
+      border: 1px solid var(--c-border-strong);
+      border-radius: 0.6rem;
+      background: var(--c-surface);
+    }
+    .sf:focus-within { border-color: var(--c-accent); }
+    .sf__icon { flex: none; color: var(--c-text-faint); }
+    .sf__input {
+      flex: 1;
+      min-inline-size: 0;
+      border: 0;
+      background: none;
+      color: var(--c-text);
+      font: inherit;
+      font-size: 1rem;
+    }
+    .sf__input:focus { outline: none; }
+    .status {
+      margin: 0.9rem 0 0;
+      color: var(--c-text-muted);
+      font-size: 0.8125rem;
+    }
+    .results { margin-block-start: 1rem; display: grid; gap: 0.6rem; }
+    .results :global(.rs) {
+      display: block;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--c-border);
+      border-radius: 0.5rem;
+      background: var(--c-surface);
+      color: var(--c-text);
+      text-decoration: none;
+    }
+    .results :global(.rs:hover) { border-color: var(--c-accent-line); background: var(--c-accent-soft); }
+    .results :global(.rs__title) {
+      display: block;
+      margin-block-end: 0.25rem;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: var(--c-accent);
+    }
+    .results :global(.rs__excerpt) {
+      display: block;
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: var(--c-text-muted);
+    }
+    .results :global(mark) {
+      background: var(--c-ev-disputed-soft);
+      color: var(--c-text);
+      font-weight: 700;
+      border-radius: 2px;
+      padding-inline: 0.1em;
+    }
+  </style>
+</BaseLayout>

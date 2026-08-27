@@ -1,0 +1,102 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { extractSources, lightMarkdown, type ChapterSource } from '../../lib/extract';
+import Library from '@lucide/astro/icons/library';
+import SearchIcon from '@lucide/astro/icons/search';
+import { withBase } from '../../lib/url';
+
+const entries = (await getCollection('chapters'))
+  .filter((c) => !c.data.draft && !c.id.startsWith('_'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const sources: ChapterSource[] = entries.map((e) => ({
+  id: e.id,
+  title: e.data.title,
+  order: e.data.order,
+  body: e.body ?? '',
+}));
+
+const refs = extractSources(sources);
+---
+
+<BaseLayout
+  title="出典一覧"
+  description="本文で参照した論文・公的資料・法令・統計を、章ごとに並べた一覧です。この本は出典が確認できない主張を書かない方針で書かれています。記述の裏を自分で取りたいときは、ここから一次情報に当たれます。"
+  pageType="CollectionPage"
+>
+  <main id="main" class="wrap">
+    <header class="hd">
+      <p class="hd__kind"><Library size={14} stroke-width={2.2} aria-hidden="true" /><span>付録C</span></p>
+      <h1 class="hd__title">出典一覧</h1>
+      <p class="hd__lead">
+        全章で参照した文献を一箇所にまとめました（{refs.length}件）。
+        同じ文献が複数の章で使われている場合はまとめてあります。
+        <strong>本文の記述に疑いを持ったときは、ここから原典に当たってください。</strong>
+        それがこの本の正しい使い方です。
+        DOI やURLがある文献はそのまま飛べます。書誌情報しかない文献には
+        「原典を探す」を付けてあります。
+      </p>
+    </header>
+
+    {refs.length === 0 ? (
+      <p class="empty">まだありません。章が増えるとここに自動で集まります。</p>
+    ) : (
+      <ol class="rf">
+        {refs.map((r) => (
+          <li class="rf__item">
+            <p class="rf__text" set:html={lightMarkdown(r.text)} />
+            <p class="rf__where">
+              {r.chapters.map((c, i) => (
+                <>{i > 0 && <span class="rf__sep">/</span>}<a href={withBase(`/chapters/${c.id}`)}>{c.title}</a></>
+              ))}
+              {r.searchUrl && (
+                <a class="rf__find" href={r.searchUrl} target="_blank" rel="noreferrer">
+                  <SearchIcon size={11} stroke-width={2.4} aria-hidden="true" />
+                  <span>原典を探す</span>
+                </a>
+              )}
+            </p>
+          </li>
+        ))}
+      </ol>
+    )}
+  </main>
+
+  <style>
+    .wrap {
+      max-inline-size: 60rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+    .hd { margin-block-end: 2rem; padding-block-end: 1.3rem; border-block-end: 1px solid var(--c-border); }
+    .hd__kind {
+      display: flex; align-items: center; gap: 0.4em;
+      margin: 0 0 0.5rem; color: var(--c-accent);
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+    }
+    .hd__title { margin: 0 0 0.7rem; font-size: clamp(1.6rem, 4.2vw, 2.1rem); font-weight: 700; }
+    .hd__lead { margin: 0; color: var(--c-text-muted); font-size: 0.9375rem; line-height: 1.9; max-inline-size: 40em; }
+    .empty { color: var(--c-text-muted); }
+
+    .rf { margin: 0; padding: 0 0 0 1.6em; }
+    .rf__item { padding-block: 0.7rem; font-size: 0.875rem; line-height: 1.85; }
+    .rf__item + .rf__item { border-block-start: 1px solid var(--c-border); }
+    .rf__item::marker { color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
+    .rf__text { margin: 0; }
+    .rf__text :global(a) { word-break: break-all; }
+    .rf__where {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.1rem 0.35rem;
+      margin: 0.3rem 0 0; color: var(--c-text-faint); font-size: 0.75rem;
+    }
+    .rf__find {
+      display: inline-flex; align-items: center; gap: 0.25em;
+      margin-inline-start: 0.4rem; padding: 0.05em 0.5em;
+      border: 1px solid var(--c-border); border-radius: 999px;
+      color: var(--c-text-muted); text-decoration: none;
+    }
+    .rf__find:hover { border-color: var(--c-accent-line); background: var(--c-accent-soft); color: var(--c-accent); }
+    .rf__where a { color: var(--c-text-muted); }
+    .rf__sep { padding-inline: 0.4em; }
+  </style>
+</BaseLayout>

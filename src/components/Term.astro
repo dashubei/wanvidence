@@ -1,0 +1,57 @@
+---
+/**
+ * 専門用語のその場解説。
+ *
+ * 方針: 専門用語を「消す」のではなく「即座に読める」ようにする。
+ *   獣医師やトレーナーに相談するとき、正しい語を知っていること自体が武器になるため、
+ *   語は残したまま、意味をその場で開けるようにする。
+ *
+ * HTML の popover 属性を使う（クリックでもキーボードでも開ける）。
+ */
+interface Props {
+  /** 平易な言い換え。1行で書くこと */
+  desc: string;
+  /** 表示する語（省略時はスロットの内容） */
+  word?: string;
+}
+
+const { desc, word } = Astro.props;
+const uid = `term-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<span class="term">
+  <button type="button" class="term__btn" popovertarget={uid} aria-describedby={uid}>
+    {word ?? <slot />}
+  </button>
+  <span class="term__pop" id={uid} popover>{desc}</span>
+</span>
+
+<style>
+  .term { display: inline; }
+  .term__btn {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline dotted var(--c-accent);
+    text-underline-offset: 0.25em;
+    text-decoration-thickness: 1.5px;
+    cursor: help;
+  }
+  .term__btn:hover { color: var(--c-accent); }
+  .term__pop {
+    inline-size: min(22rem, calc(100vw - 2rem));
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--c-border-strong);
+    border-radius: 0.45rem;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    box-shadow: 0 8px 24px -8px hsl(var(--c-shadow) / 0.35);
+  }
+  .term__pop::backdrop { background: transparent; }
+</style>

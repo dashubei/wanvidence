@@ -1,0 +1,60 @@
+# git hooks。CI は GitHub Actions ではなく手元で回す方針（依頼者の決定）。
+#
+# ── hooks を一時的に飛ばす ────────────────────────────────
+#   LEFTHOOK=0 git commit -m "wip"          lefthook 全体を無効にする
+#   git commit --no-verify -m "wip"          git 側で hook を飛ばす
+#   LEFTHOOK_EXCLUDE=lint git commit -m ".." job 名を指定して1つだけ飛ばす
+#
+# ── hooks を張り直す ──────────────────────────────────────
+#   pnpm run prepare     （pnpm install でも自動で走る）
+#
+# ── 手で回す ──────────────────────────────────────────────
+#   pnpm exec lefthook run pre-commit --all-files
+#   pnpm exec lefthook validate
+
+min_version: 2.1.10
+
+# pre-commit には「速いもの」だけを置く。
+# 型チェックとビルドは pre-push（ビルドは 29 章あって約 9 秒かかる）。
+pre-commit:
+  # parallel にしない。format と lint はどちらも同じファイルを書き換えるので、
+  # 同時に走らせると書き込みが競合する。
+  parallel: false
+  jobs:
+    - name: format
+      # oxfmt は .astro を扱えない（明示的に渡すと exit 2 で除外される）ので glob から外す。
+      # .mdx / .md / .css / .json は .oxfmtrc.json 側で除外している
+      # （原稿の書式と、手で列を揃えた global.css を壊さないため）。
+      glob: "*.{ts,mts,cts,js,mjs,cjs}"
+      run: pnpm exec oxfmt --no-error-on-unmatched-pattern {staged_files}
+      stage_fixed: true
+
+    - name: lint
+      # .astro は frontmatter だけが対象になる。
+      # --fix がテンプレート部分と <style> を壊さないことは実際に確認済み。
+      glob: "*.{ts,mts,cts,js,mjs,cjs,astro}"
+      run: pnpm exec oxlint --fix {staged_files}
+      stage_fixed: true
+
+    - name: manuscript
+      # 原稿の健康診断。MDX が変更されたときだけ走らせる。
+      glob: "*.mdx"
+      # ここでは意図的にコミットを止めない（`|| true`）。
+      # 理由: 読みやすさの目標値は現状 28/29 章で未達であり、章参照のズレ検出も
+      # 誤検知を含む（スクリプト自身がそう出力している）。いま止めると何もコミットできない。
+      # 原稿が固まったら `|| true` を外してゲートに変えるとよい。
+      run: pnpm run check || true
+
+# push の前に、壊れたものが外に出ないことを確認する。
+pre-push:
+  parallel: false
+  jobs:
+    - name: typecheck
+      run: pnpm run typecheck
+
+    - name: lint
+      # ステージ単位ではなくリポジトリ全体を見る。
+      run: pnpm run lint
+
+    - name: build
+      run: pnpm run build

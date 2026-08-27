@@ -1,0 +1,122 @@
+---
+import { getCollection } from 'astro:content';
+import * as icons from '@lucide/astro';
+import Scale from '@lucide/astro/icons/scale';
+import BookA from '@lucide/astro/icons/book-a';
+import Library from '@lucide/astro/icons/library';
+import BookOpenCheck from '@lucide/astro/icons/book-open-check';
+import { withBase } from '../lib/url';
+
+interface Props {
+  currentId?: string;
+}
+const { currentId } = Astro.props;
+
+const all = (await getCollection('chapters'))
+  .filter((c) => !c.data.draft)
+  .sort((a, b) => a.data.partOrder - b.data.partOrder || a.data.order - b.data.order);
+
+// 部ごとにまとめる
+const parts: { name: string; order: number; items: typeof all }[] = [];
+for (const ch of all) {
+  let p = parts.find((x) => x.name === ch.data.part);
+  if (!p) {
+    p = { name: ch.data.part, order: ch.data.partOrder, items: [] };
+    parts.push(p);
+  }
+  p.items.push(ch);
+}
+parts.sort((a, b) => a.order - b.order);
+
+const iconMap = icons as unknown as Record<string, any>;
+---
+
+<nav class="cn" aria-label="章の一覧">
+  {parts.map((part, i) => (
+    <div class="cn__part">
+      {/* 見出し要素にしないこと。このナビは本文より前に出るので、h2 にすると
+          章の h1 より前に h2 が並び、文書の見出し階層が崩れる（axe の heading-order）。
+          グループ名としての役割は aria-labelledby で ul に与える。 */}
+      <p class="cn__partTitle" id={`cn-part-${i}`}>{part.name}</p>
+      <ul class="cn__list" aria-labelledby={`cn-part-${i}`}>
+        {part.items.map((ch) => {
+          const Icon = iconMap[ch.data.icon] ?? iconMap.BookOpen;
+          const active = ch.id === currentId;
+          return (
+            <li>
+              <a
+                href={withBase(`/chapters/${ch.id}`)}
+                class:list={['cn__link', active && 'cn__link--active']}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon size={15} stroke-width={2} aria-hidden="true" class="cn__icon" />
+                <span class="cn__text">{ch.data.navTitle ?? ch.data.title}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ))}
+
+  <div class="cn__part">
+    <p class="cn__partTitle" id="cn-part-appendix">付録</p>
+    <ul class="cn__list" aria-labelledby="cn-part-appendix">
+      <li>
+        <a href={withBase("/appendix/disputed")} class="cn__link">
+          <Scale size={15} stroke-width={2} aria-hidden="true" class="cn__icon" />
+          <span class="cn__text">論争のあるトピック</span>
+        </a>
+      </li>
+      <li>
+        <a href={withBase("/appendix/glossary")} class="cn__link">
+          <BookA size={15} stroke-width={2} aria-hidden="true" class="cn__icon" />
+          <span class="cn__text">用語集</span>
+        </a>
+      </li>
+      <li>
+        <a href={withBase("/appendix/sources")} class="cn__link">
+          <Library size={15} stroke-width={2} aria-hidden="true" class="cn__icon" />
+          <span class="cn__text">出典一覧</span>
+        </a>
+      </li>
+      <li>
+        <a href={withBase("/legend")} class="cn__link">
+          <BookOpenCheck size={15} stroke-width={2} aria-hidden="true" class="cn__icon" />
+          <span class="cn__text">この本の読み方</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .cn { font-size: 0.875rem; }
+  .cn__part + .cn__part { margin-block-start: 1.4rem; }
+  .cn__partTitle {
+    margin: 0 0 0.4rem;
+    padding-inline: 0.6rem;
+    color: var(--c-text-faint);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+  .cn__list { margin: 0; padding: 0; list-style: none; }
+  .cn__link {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.4rem;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    text-decoration: none;
+  }
+  .cn__link:hover { background: var(--c-surface-2); color: var(--c-text); }
+  .cn__link--active {
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-weight: 700;
+  }
+  .cn__icon { flex: none; margin-block-start: 0.28em; }
+</style>

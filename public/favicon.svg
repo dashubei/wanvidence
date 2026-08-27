@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Wanvidence">
+  <title>Wanvidence</title>
+  <!--
+    ヘッダーのブランドアイコン（Lucide の paw-print）と同じ形を、16px で潰れないように
+    線ではなく塗りで作り直したもの。色は global.css の --c-accent / --c-text-invert を
+    sRGB に変換した実値（SVG では CSS 変数が使えない）。
+    トークンを変えたときは、このファイルの2色も合わせて変える。
+  -->
+  <style>
+    .bg { fill: #006490; }
+    .fg { fill: #faf8f5; }
+    /* 暗いタブバーでは沈むので、明暗を入れ替える */
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #65bde8; }
+      .fg { fill: #0d2430; }
+    }
+  </style>
+  <rect class="bg" width="32" height="32" rx="7" />
+  <g class="fg">
+    <ellipse cx="8.1" cy="14.2" rx="3.15" ry="4.0" transform="rotate(-24 8.1 14.2)" />
+    <ellipse cx="13.3" cy="9.5" rx="3.0" ry="4.1" transform="rotate(-8 13.3 9.5)" />
+    <ellipse cx="18.7" cy="9.5" rx="3.0" ry="4.1" transform="rotate(8 18.7 9.5)" />
+    <ellipse cx="23.9" cy="14.2" rx="3.15" ry="4.0" transform="rotate(24 23.9 14.2)" />
+    <path d="M16 15.4c3.9 0 7.1 2.9 7.1 6.2 0 2.6-2.1 4.4-5.0 4.4-1.0 0-1.6-.3-2.1-.3s-1.1.3-2.1.3c-2.9 0-5.0-1.8-5.0-4.4 0-3.3 3.2-6.2 7.1-6.2Z" />
+  </g>
+</svg>

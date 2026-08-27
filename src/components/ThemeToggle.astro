@@ -1,0 +1,89 @@
+---
+/**
+ * テーマ切替。system → light → dark → system の順に巡回する。
+ * 「system」を独立した状態として持つのは、OS の設定に追従したい利用者のため。
+ */
+import Sun from '@lucide/astro/icons/sun';
+import Moon from '@lucide/astro/icons/moon';
+import MonitorCog from '@lucide/astro/icons/monitor-cog';
+---
+
+<!-- aria-label を付けないこと。付けると要素の中身より優先されるので、
+     下の sr-only（いまどのテーマかを伝える唯一の手がかり）が読み上げから消える。
+     ボタンの読み上げ名は sr-only のテキストそのものにしている。 -->
+<button type="button" class="tt" data-theme-toggle>
+  <span class="tt__slot" data-icon="system"><MonitorCog size={17} stroke-width={2} aria-hidden="true" /></span>
+  <span class="tt__slot" data-icon="light" hidden><Sun size={17} stroke-width={2} aria-hidden="true" /></span>
+  <span class="tt__slot" data-icon="dark" hidden><Moon size={17} stroke-width={2} aria-hidden="true" /></span>
+  <span class="sr-only" data-theme-label>表示テーマを切り替える（現在: システム設定に合わせる）</span>
+</button>
+
+<script>
+  const KEY = 'wanvidence:theme';
+  type Mode = 'system' | 'light' | 'dark';
+  const ORDER: Mode[] = ['system', 'light', 'dark'];
+  const LABEL: Record<Mode, string> = {
+    system: 'システム設定に合わせる',
+    light: 'ライト',
+    dark: 'ダーク',
+  };
+  // 読み上げ名。「何をするボタンか」と「いまどの状態か」を1つの名前に入れる。
+  const name = (m: Mode) => `表示テーマを切り替える（現在: ${LABEL[m]}）`;
+
+  const read = (): Mode => {
+    try {
+      const v = localStorage.getItem(KEY);
+      if (v === 'light' || v === 'dark' || v === 'system') return v;
+    } catch {
+      /* 読めない環境ではシステム設定に従う */
+    }
+    return 'system';
+  };
+
+  const apply = (mode: Mode) => {
+    const root = document.documentElement;
+    if (mode === 'system') delete root.dataset.theme;
+    else root.dataset.theme = mode;
+
+    document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((btn) => {
+      btn.querySelectorAll<HTMLElement>('[data-icon]').forEach((el) => {
+        el.hidden = el.dataset.icon !== mode;
+      });
+      const label = btn.querySelector<HTMLElement>('[data-theme-label]');
+      if (label) label.textContent = name(mode);
+      btn.title = `テーマ: ${LABEL[mode]}`;
+    });
+  };
+
+  let current = read();
+  apply(current);
+
+  document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      current = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length]!;
+      try {
+        localStorage.setItem(KEY, current);
+      } catch {
+        /* 保存できなくても、このセッション中の切替は効かせる */
+      }
+      apply(current);
+    });
+  });
+</script>
+
+<style>
+  .tt {
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--c-border);
+    border-radius: 0.5rem;
+    background: var(--c-surface);
+    color: var(--c-text-muted);
+    cursor: pointer;
+  }
+  .tt:hover { background: var(--c-surface-2); color: var(--c-text); }
+  .tt__slot { display: grid; place-items: center; grid-area: 1 / 1; }
+</style>

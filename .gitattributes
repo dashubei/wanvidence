@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# pnpm のロックファイルは差分を汚さないよう linguist で生成物扱いにする
+pnpm-lock.yaml linguist-generated=true

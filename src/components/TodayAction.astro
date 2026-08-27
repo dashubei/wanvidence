@@ -1,0 +1,59 @@
+---
+/**
+ * 「今日できる1つのこと」。
+ *
+ * 各章の冒頭に必ず置く。
+ * 大きな課題を、今日中に必ず完了できる最小単位にまで割る（シェイピング）。
+ * 読み終えた読者が何も行動しないまま閉じる、という状態を防ぐための装置。
+ */
+import Footprints from '@lucide/astro/icons/footprints';
+
+interface Props {
+  /** 所要時間の目安。例: "5分" */
+  time?: string;
+}
+
+const { time } = Astro.props;
+---
+
+<section class="act">
+  <p class="act__head">
+    <Footprints size={16} stroke-width={2.2} aria-hidden="true" class="act__icon" />
+    <span>今日できる1つのこと</span>
+    {time && <span class="act__time">{time}</span>}
+  </p>
+  <div class="act__body"><slot /></div>
+</section>
+
+<style>
+  .act {
+    margin-block: 1.8rem;
+    padding: 0.9rem 1.1rem 1rem;
+    border: 1px solid var(--c-action-border);
+    border-radius: 0.6rem;
+    background: var(--c-action-soft);
+  }
+  .act__head {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0 0 0.45rem;
+    color: var(--c-action);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .act__icon { flex: none; }
+  .act__time {
+    margin-inline-start: auto;
+    padding: 0.05em 0.5em;
+    border: 1px solid var(--c-action-border);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .act__body { font-size: 0.9375rem; }
+  .act__body :global(> *:first-child) { margin-block-start: 0; }
+  .act__body :global(> *:last-child) { margin-block-end: 0; }
+  .act__body :global(> * + *) { margin-block-start: 0.7em; }
+</style>

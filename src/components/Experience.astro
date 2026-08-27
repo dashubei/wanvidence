@@ -1,0 +1,70 @@
+---
+/**
+ * 体験談ブロック。
+ *
+ * 設計上の最重要要件:
+ *   科学的根拠と体験談を「視覚的に」分離すること。
+ *   体験談は「こう語られている」という事実の記録であって、推奨ではない。
+ *   一般化して「〜すべき」と書かないこと。
+ */
+import MessageSquareQuote from '@lucide/astro/icons/message-square-quote';
+import Users from '@lucide/astro/icons/users';
+
+interface Props {
+  /** 情報源の種類。例: "個人ブログ" "Reddit r/puppy101" "トレーナーの実務記事" */
+  source?: string;
+  sourceUrl?: string;
+  /** true なら「複数の記録で共通して語られていること」として扱う（個別の逸話より価値が高い） */
+  common?: boolean;
+}
+
+const { source, sourceUrl, common = false } = Astro.props;
+---
+
+<figure class:list={['exp', common && 'exp--common']}>
+  <figcaption class="exp__head">
+    {common
+      ? <Users size={15} stroke-width={2.2} aria-hidden="true" class="exp__icon" />
+      : <MessageSquareQuote size={15} stroke-width={2.2} aria-hidden="true" class="exp__icon" />}
+    <span class="exp__kind">{common ? '複数の記録で共通して語られていること' : '体験談'}</span>
+    {source && (
+      <span class="exp__src">
+        {sourceUrl ? <a href={sourceUrl} rel="noreferrer">{source}</a> : source}
+      </span>
+    )}
+  </figcaption>
+  <div class="exp__body"><slot /></div>
+</figure>
+
+<style>
+  .exp {
+    margin-block: 1.6rem;
+    padding: 0.85rem 1.1rem 1rem;
+    border: 1px dashed var(--c-ev-exp-border);
+    border-radius: 0.5rem;
+    background: var(--c-ev-exp-soft);
+  }
+  .exp--common { border-style: solid; }
+  .exp__head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45em;
+    margin-block-end: 0.5rem;
+    color: var(--c-ev-exp);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .exp__icon { flex: none; }
+  .exp__src {
+    padding-inline-start: 0.5em;
+    border-inline-start: 1px solid var(--c-ev-exp-border);
+    font-weight: 400;
+  }
+  .exp__src a { color: inherit; }
+  .exp__body { font-size: 0.9375rem; }
+  .exp__body :global(> *:first-child) { margin-block-start: 0; }
+  .exp__body :global(> *:last-child) { margin-block-end: 0; }
+  .exp__body :global(> * + *) { margin-block-start: 0.7em; }
+</style>

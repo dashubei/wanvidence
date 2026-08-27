@@ -1,0 +1,86 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { extractTerms, type ChapterSource } from '../../lib/extract';
+import BookA from '@lucide/astro/icons/book-a';
+import { withBase } from '../../lib/url';
+
+const entries = (await getCollection('chapters'))
+  .filter((c) => !c.data.draft && !c.id.startsWith('_'))
+  .sort((a, b) => a.data.order - b.data.order);
+
+const sources: ChapterSource[] = entries.map((e) => ({
+  id: e.id,
+  title: e.data.title,
+  order: e.data.order,
+  body: e.body ?? '',
+}));
+
+const terms = extractTerms(sources);
+---
+
+<BaseLayout
+  title="用語集"
+  description="本文で解説した専門用語の一覧です。獣医師やトレーナーに相談するとき、正しい語を知っていること自体が役に立ちます。そのため用語は平易な言葉に置き換えず、日常語の説明を添えて残しています。初出の章へのリンク付き。"
+  pageType="CollectionPage"
+  terms={terms}
+>
+  <main id="main" class="wrap">
+    <header class="hd">
+      <p class="hd__kind"><BookA size={14} stroke-width={2.2} aria-hidden="true" /><span>付録B</span></p>
+      <h1 class="hd__title">用語集</h1>
+      <p class="hd__lead">
+        本文中で点線が引かれている語の一覧です（{terms.length}語）。
+        この本は専門用語を消さずに残しています。獣医師やトレーナーに相談するとき、
+        正しい語を知っていること自体が役に立つからです。
+      </p>
+    </header>
+
+    {terms.length === 0 ? (
+      <p class="empty">まだ用語がありません。章が増えるとここに自動で集まります。</p>
+    ) : (
+      <dl class="gl">
+        {terms.map((t) => (
+          <div class="gl__row">
+            <dt class="gl__term">{t.term}</dt>
+            <dd class="gl__desc">
+              <span>{t.desc}</span>
+              <span class="gl__where">
+                {t.chapters.map((c, i) => (
+                  <>{i > 0 && <span class="gl__sep">/</span>}<a href={withBase(`/chapters/${c.id}`)}>{c.title}</a></>
+                ))}
+              </span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    )}
+  </main>
+
+  <style>
+    .wrap {
+      max-inline-size: 56rem;
+      margin-inline: auto;
+      padding: clamp(1.5rem, 4vw, 3rem) clamp(0.9rem, 4vw, 2.5rem) 0;
+    }
+    .hd { margin-block-end: 2rem; padding-block-end: 1.3rem; border-block-end: 1px solid var(--c-border); }
+    .hd__kind {
+      display: flex; align-items: center; gap: 0.4em;
+      margin: 0 0 0.5rem; color: var(--c-accent);
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em;
+    }
+    .hd__title { margin: 0 0 0.7rem; font-size: clamp(1.6rem, 4.2vw, 2.1rem); font-weight: 700; }
+    .hd__lead { margin: 0; color: var(--c-text-muted); font-size: 0.9375rem; line-height: 1.9; max-inline-size: 40em; }
+    .empty { color: var(--c-text-muted); }
+
+    .gl { margin: 0; border: 1px solid var(--c-border); border-radius: 0.6rem; overflow: clip; }
+    .gl__row { display: grid; gap: 0.2rem 1.2rem; padding: 0.85rem 1rem; background: var(--c-surface); }
+    .gl__row + .gl__row { border-block-start: 1px solid var(--c-border); }
+    @media (min-width: 44rem) { .gl__row { grid-template-columns: 12rem 1fr; align-items: baseline; } }
+    .gl__term { margin: 0; font-size: 0.9375rem; font-weight: 700; }
+    .gl__desc { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9375rem; line-height: 1.8; }
+    .gl__where { color: var(--c-text-faint); font-size: 0.75rem; }
+    .gl__where a { color: var(--c-text-muted); }
+    .gl__sep { padding-inline: 0.4em; }
+  </style>
+</BaseLayout>
