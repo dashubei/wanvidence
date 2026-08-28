@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SearchIcon from '@lucide/astro/icons/search';
+
+// 末尾のスラッシュを落とす。'/' のときは空文字になり、base なしの配信と同じパスになる。
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
 ---
 
 <!-- noindex にする理由: 検索フォーム自体には読む内容が無く、索引に入れても
@@ -27,12 +30,33 @@ import SearchIcon from '@lucide/astro/icons/search';
     <div class="results" data-results></div>
   </main>
 
-  <script>
-    const input = document.querySelector<HTMLInputElement>('#q');
-    const status = document.querySelector<HTMLElement>('[data-status]');
-    const out = document.querySelector<HTMLElement>('[data-results]');
+  <!--
+    この script は is:inline にしている（＝Astro / Vite に一切触らせない）。
 
-    let pagefind: any = null;
+    通常の <script> にすると Vite が動的 import を
+      __vitePreload(() => import(x), __VITE_PRELOAD__)
+    に包み、__VITE_PRELOAD__ を後段で依存配列に差し替える。
+    ところが Astro が生成された chunk を HTML に直接埋め込む経路（小さい script は
+    外部ファイルにせず inline される）に入ると差し替えが走らず、
+    __VITE_PRELOAD__ という未定義の識別子がそのまま出力される。
+    実行時に ReferenceError になり、下の try/catch が
+    「検索インデックスが見つかりません」を表示していた（索引自体は正常に生成されている）。
+
+    /* @vite-ignore */ を付けても vite.build.modulePreload を false にしても包むのは止まらない。
+    ページが増えて chunk が共有されると外部ファイル化して直る、という
+    再現条件の分かりにくい壊れ方をするので、Vite の変換自体を通さないことにした。
+    base は define:vars で渡す（is:inline では import.meta.env が置換されないため）。
+
+    副作用: `pnpm typecheck` が ts(7027) "Unreachable code detected" を hint 1件出す。
+    astro check が is:inline の中身をコンポーネント関数の return より後ろに置くための
+    見かけ上のもので、error ではない（終了コードは 0 のまま）。追いかけなくてよい。
+  -->
+  <script is:inline define:vars={{ base }}>
+    const input = document.querySelector('#q');
+    const status = document.querySelector('[data-status]');
+    const out = document.querySelector('[data-results]');
+
+    let pagefind = null;
     let loadFailed = false;
 
     // ベースパス配下（GitHub Pages のプロジェクトサイト）で配信されるときの2点。
@@ -40,34 +64,32 @@ import SearchIcon from '@lucide/astro/icons/search';
     //   1. バンドルの場所。import した URL から自動検出されるので、base 付きで import する
     //   2. 検索結果の URL。pagefind が索引を作るのは dist/ の中なので、生成される URL は
     //      `/chapters/...` と base なしになる。baseUrl で前に付け足して補う
-    // base なしのローカル閲覧では BASE_URL が '/' なので、従来と同じパスになる。
-    const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
-
+    // base なしのローカル閲覧では空文字なので、従来と同じパスになる。
     const ensurePagefind = async () => {
       if (pagefind || loadFailed) return pagefind;
       try {
         // 検索インデックスはビルド時に生成される。
-        // 開発サーバー（npm run dev）では存在しないため、その場合はここで失敗する。
-        pagefind = await import(/* @vite-ignore */ `${base}/pagefind/pagefind.js`);
+        // 開発サーバー（pnpm dev）では存在しないため、その場合はここで失敗する。
+        pagefind = await import(`${base}/pagefind/pagefind.js`);
         await pagefind.options({ baseUrl: `${base}/` });
         await pagefind.init();
       } catch {
         loadFailed = true;
         if (status) {
           status.textContent =
-            '検索インデックスが見つかりません。npm run build でビルドしてから開いてください（開発サーバーでは検索は動きません）。';
+            '検索インデックスが見つかりません。pnpm start でビルドしてから開いてください（開発サーバーでは検索は動きません）。';
         }
       }
       return pagefind;
     };
 
-    const escapeHtml = (s: string) =>
+    const escapeHtml = (s) =>
       s.replace(/[&<>"']/g, (c) =>
         ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
       );
 
     let seq = 0;
-    const run = async (query: string) => {
+    const run = async (query) => {
       const mine = ++seq;
       if (!out || !status) return;
 
@@ -84,13 +106,16 @@ import SearchIcon from '@lucide/astro/icons/search';
       const search = await pf.search(query);
       if (mine !== seq) return; // より新しい入力が来ていたら破棄
 
-      const results = await Promise.all(search.results.slice(0, 20).map((r: any) => r.data()));
+      const results = await Promise.all(search.results.slice(0, 20).map((r) => r.data()));
       if (mine !== seq) return;
 
-      status.textContent = `${search.results.length} 件見つかりました`;
+      status.textContent =
+        search.results.length === 0
+          ? '見つかりませんでした。別の言い方（例: 「予防接種」→「ワクチン」）も試してください。'
+          : `${search.results.length} 件見つかりました`;
       out.innerHTML = results
         .map(
-          (r: any) => `
+          (r) => `
         <a class="rs" href="${escapeHtml(r.url)}">
           <span class="rs__title">${escapeHtml(r.meta?.title ?? '(無題)')}</span>
           <span class="rs__excerpt">${r.excerpt}</span>
@@ -99,7 +124,7 @@ import SearchIcon from '@lucide/astro/icons/search';
         .join('');
     };
 
-    let timer: number | undefined;
+    let timer;
     input?.addEventListener('input', () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => run(input.value), 180);
