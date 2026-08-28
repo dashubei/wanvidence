@@ -63,26 +63,41 @@ const { label, Icon, desc } = MAP[level];
 <style>
   .ev {
     display: inline-flex;
-    align-items: center;
+    /* baseline にする理由: note が折り返すとバッジは複数行の高さになる。
+       center だとアイコンとラベルが箱の中央（＝2行目あたり）に浮いてしまうので、
+       1行目のベースラインに揃える。1行しかないときの見た目は従来とほぼ同じ。 */
+    align-items: baseline;
     gap: 0.3em;
+    max-inline-size: 100%;
     padding: 0.12em 0.55em 0.16em;
     border: 1px solid var(--tint-border);
-    border-radius: 999px;
+    /* 1行分の高さ（約 23px）の半分。1行なら従来どおり完全な pill に見え、
+       note が折り返して数行になったときは角丸の箱として成立する。
+       999px のままだと、複数行になった瞬間に両端が極端に丸い形になる。 */
+    border-radius: 0.72rem;
     background: var(--tint-soft);
     color: var(--tint);
     font-size: 0.75rem;
     font-weight: 700;
     line-height: 1.5;
-    white-space: nowrap;
     vertical-align: 0.08em;
     cursor: help;
   }
   .ev__icon { flex: none; }
+  /* ラベル（「強い根拠」など）だけは絶対に折り返さない。
+     バッジ全体に white-space: nowrap を掛けると、note が長いときに
+     モバイルで数百px はみ出して横スクロールが出る（実測で最大 614px）。 */
+  .ev__label { white-space: nowrap; }
   .ev__note {
+    /* flex アイテムの min-width は auto なので、指定しないと
+       「これ以上縮まない幅」が残って親からはみ出す。 */
+    min-inline-size: 0;
     padding-inline-start: 0.4em;
     border-inline-start: 1px solid var(--tint-border);
     font-weight: 400;
     font-variant-numeric: tabular-nums;
+    /* 出典注記には DOI・英語の誌名など、区切りのない長い語が入る */
+    overflow-wrap: anywhere;
   }
   .ev--strong     { --tint: var(--c-ev-strong);   --tint-soft: var(--c-ev-strong-soft);   --tint-border: var(--c-ev-strong-border); }
   .ev--moderate   { --tint: var(--c-ev-moderate); --tint-soft: var(--c-ev-moderate-soft); --tint-border: var(--c-ev-moderate-border); }

@@ -162,6 +162,9 @@ const siteName = SITE_NAME;
       .hd__menu {
         display: grid;
         place-items: center;
+        /* flex アイテムなので、指定しないと幅が足りないときに 2.25rem を割って縮む。
+           実測で 21px まで潰れてタップ領域が欠けていた。 */
+        flex: none;
         inline-size: 2.25rem;
         block-size: 2.25rem;
         padding: 0;
@@ -213,6 +216,50 @@ const siteName = SITE_NAME;
         white-space: nowrap;
       }
       .hd__search:hover { background: var(--c-surface-2); color: var(--c-text); }
+
+      /* 幅の狭い端末では検索ボタンを虫眼鏡だけにする。
+         ロゴ + 目次ボタン + 読み方 + 検索 + テーマ切替を並べると、
+         360px で右の余白を使い切り、320px では 30px はみ出していた。
+         文字は display:none ではなく視覚的にだけ隠す。消すと読み上げ名が
+         「検索」ではなくなり、aria-label で補うと今度は
+         「見えているテキストと読み上げが違う」状態になるため。 */
+      @media (max-width: 24rem) {
+        .hd__inner { gap: 0.4rem; }
+        .hd__link { padding-inline: 0.4rem; }
+        .hd__search { padding-inline: 0.55rem; }
+        .hd__search > span {
+          position: absolute;
+          inline-size: 1px;
+          block-size: 1px;
+          margin: -1px;
+          padding: 0;
+          border: 0;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
+        }
+      }
+
+      /* Galaxy Fold の外側画面など 300px 級。ここまで来ると余白を削るしかない。
+         項目を消すのではなく詰める（読み方・検索・テーマ切替はすべて残す）。 */
+      @media (max-width: 19rem) {
+        .hd__inner { padding-inline: 0.5rem; }
+        .hd__link { padding-inline: 0.25rem; }
+        .hd__search { padding-inline: 0.4rem; }
+        /* ここまで狭いと詰めるだけでは足りない。ロゴの文字を視覚的に隠して
+           肉球アイコンだけにする。リンクは残り、読み上げ名も Wanvidence のまま。
+           読み方・検索・テーマ切替のどれかを消すより、こちらの損失が小さい。 */
+        .hd__brandText {
+          position: absolute;
+          inline-size: 1px;
+          block-size: 1px;
+          margin: -1px;
+          padding: 0;
+          border: 0;
+          overflow: hidden;
+          clip-path: inset(50%);
+        }
+      }
 
       .ft {
         margin-block-start: 4rem;

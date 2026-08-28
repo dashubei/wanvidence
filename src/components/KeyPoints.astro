@@ -50,6 +50,10 @@ const { items, title = '結論' } = Astro.props;
     font-weight: 500;
     line-height: 1.75;
   }
+  /* flex アイテムの min-width は auto。本文には word-break: auto-phrase が効いていて、
+     min-content 幅が「いちばん長い文節」になるため、指定しないとその幅で下限が張り付き、
+     モバイルで箱からはみ出す（実測で 87px）。 */
+  .kp__item > span { min-inline-size: 0; }
   .kp__item + .kp__item { margin-block-start: 0.55em; }
   .kp__item::before {
     content: counter(kp);

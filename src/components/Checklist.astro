@@ -120,6 +120,9 @@ const { id, title, items, note } = Astro.props;
     gap: 0.45em;
     margin: 0;
     flex: 1;
+    /* flex アイテムの min-width は auto。指定しないと見出しが min-content 幅より
+       縮まず、右の「0 / 15」が箱の外へ押し出される */
+    min-inline-size: 0;
     font-size: 0.9375rem;
     font-weight: 700;
     line-height: 1.5;

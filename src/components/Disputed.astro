@@ -105,11 +105,14 @@ const { topic, japan, intl, verdict, ask } = Astro.props;
   }
   .dsp__cols {
     display: grid;
+    /* minmax(0, …) にしないと、トラックの下限が min-content になり、
+       長い語を含む段落があると狭い画面で枠から溢れる */
+    grid-template-columns: minmax(0, 1fr);
     gap: 1px;
     background: var(--c-border);
   }
   @media (min-width: 44rem) {
-    .dsp__cols { grid-template-columns: 1fr 1fr; }
+    .dsp__cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   }
   .dsp__col { padding: 0.85rem 1rem; background: var(--c-bg); }
   .dsp__colhead {
